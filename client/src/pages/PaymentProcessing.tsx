@@ -23,6 +23,7 @@ import { ConfirmationModal } from '../components/common/ConfirmationModal';
 import { UpiQrModal } from '../components/common/UpiQrModal';
 import { generateUpiIntentUri, getAppSpecificUpiLinks } from '../utils/upiUtils';
 import { generatePaymentReceiptPDF } from '../utils/receiptGenerator';
+import { GooglePayLogo, PhonePeLogo, PaytmLogo } from '../components/common/PaymentBrandIcons';
 
 interface PaymentProcessingProps {
   initialPayrollId?: string;
@@ -371,25 +372,25 @@ export const PaymentProcessing: React.FC<PaymentProcessingProps> = ({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <a
                       href={upiDetails?.links.gpay}
-                      className="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-xs text-slate-800 flex flex-col items-center justify-center gap-1 shadow-xs hover:border-indigo-300 transition-all"
+                      className="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-xs text-slate-800 flex flex-col items-center justify-center gap-1.5 shadow-xs hover:border-indigo-300 transition-all group"
                     >
-                      <span className="text-base">🟢</span>
+                      <GooglePayLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                       <span>Google Pay</span>
                     </a>
 
                     <a
                       href={upiDetails?.links.phonepe}
-                      className="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-xs text-slate-800 flex flex-col items-center justify-center gap-1 shadow-xs hover:border-indigo-300 transition-all"
+                      className="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-xs text-slate-800 flex flex-col items-center justify-center gap-1.5 shadow-xs hover:border-indigo-300 transition-all group"
                     >
-                      <span className="text-base">🟣</span>
+                      <PhonePeLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                       <span>PhonePe</span>
                     </a>
 
                     <a
                       href={upiDetails?.links.paytm}
-                      className="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-xs text-slate-800 flex flex-col items-center justify-center gap-1 shadow-xs hover:border-indigo-300 transition-all"
+                      className="p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-center font-bold text-xs text-slate-800 flex flex-col items-center justify-center gap-1.5 shadow-xs hover:border-indigo-300 transition-all group"
                     >
-                      <span className="text-base">🔵</span>
+                      <PaytmLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                       <span>Paytm</span>
                     </a>
 

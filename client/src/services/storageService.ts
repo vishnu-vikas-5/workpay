@@ -31,6 +31,7 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 const KEYS = {
@@ -409,19 +410,247 @@ export const storageService = {
 
   // ADVANCES / LENDING
   getAdvances: async (): Promise<AdvanceRecord[]> => {
+    if (isFirebaseConfigured) {
+      try {
+        const snap = await getDocs(collection(db, 'advances'));
+        if (!snap.empty) return snap.docs.map((d) => d.data() as AdvanceRecord);
+      } catch (e) {
+        console.warn('Fallback to local advances', e);
+      }
+    }
     return getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
   },
 
   saveAdvance: async (adv: AdvanceRecord): Promise<void> => {
     const list = await storageService.getAdvances();
-    const updated = [adv, ...list];
+    const index = list.findIndex((a) => a.id === adv.id);
+    let updated: AdvanceRecord[];
+    if (index >= 0) {
+      updated = [...list];
+      updated[index] = adv;
+    } else {
+      updated = [adv, ...list];
+    }
     setLocal(KEYS.ADVANCES, updated);
+
+    if (isFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, 'advances', adv.id), adv);
+      } catch (e) {
+        console.error('Firestore saveAdvance error:', e);
+      }
+    }
   },
 
   deleteAdvance: async (id: string): Promise<void> => {
     const list = await storageService.getAdvances();
     const updated = list.filter((a) => a.id !== id);
     setLocal(KEYS.ADVANCES, updated);
+
+    if (isFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'advances', id));
+      } catch (e) {
+        console.error('Firestore deleteAdvance error:', e);
+      }
+    }
+  },
+
+  // CLOUD STATS & QUOTA MANAGEMENT
+  getCloudStats: async () => {
+    if (!isFirebaseConfigured) {
+      return {
+        online: false,
+        employees: 0,
+        attendance: 0,
+        shifts: 0,
+        payments: 0,
+        advances: 0,
+        payroll: 0,
+        totalDocs: 0,
+      };
+    }
+    try {
+      const [empSnap, attSnap, shfSnap, paySnap, advSnap, pyrSnap] = await Promise.all([
+        getDocs(collection(db, 'employees')).catch(() => ({ size: 0, empty: true })),
+        getDocs(collection(db, 'attendance')).catch(() => ({ size: 0, empty: true })),
+        getDocs(collection(db, 'shifts')).catch(() => ({ size: 0, empty: true })),
+        getDocs(collection(db, 'payments')).catch(() => ({ size: 0, empty: true })),
+        getDocs(collection(db, 'advances')).catch(() => ({ size: 0, empty: true })),
+        getDocs(collection(db, 'payroll')).catch(() => ({ size: 0, empty: true })),
+      ]);
+
+      const employees = empSnap.size || 0;
+      const attendance = attSnap.size || 0;
+      const shifts = shfSnap.size || 0;
+      const payments = paySnap.size || 0;
+      const advances = advSnap.size || 0;
+      const payroll = pyrSnap.size || 0;
+
+      return {
+        online: true,
+        employees,
+        attendance,
+        shifts,
+        payments,
+        advances,
+        payroll,
+        totalDocs: employees + attendance + shifts + payments + advances + payroll,
+      };
+    } catch (e) {
+      console.warn('Could not fetch cloud stats', e);
+      return {
+        online: false,
+        employees: 0,
+        attendance: 0,
+        shifts: 0,
+        payments: 0,
+        advances: 0,
+        payroll: 0,
+        totalDocs: 0,
+      };
+    }
+  },
+
+  // EXPORT ALL DATA TO JSON
+  exportAllData: async () => {
+    const employees = await storageService.getEmployees();
+    const shifts = await storageService.getShifts();
+    const attendance = await storageService.getAttendance();
+    const overtime = await storageService.getOvertimeRequests();
+    const payroll = await storageService.getPayrollRecords();
+    const payments = await storageService.getTransactions();
+    const advances = await storageService.getAdvances();
+    const departments = await storageService.getDepartments();
+
+    const backupPayload = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      appName: 'WorkPay',
+      metadata: {
+        totalEmployees: employees.length,
+        totalAttendance: attendance.length,
+        totalPayments: payments.length,
+        totalAdvances: advances.length,
+      },
+      data: {
+        employees,
+        shifts,
+        attendance,
+        overtime,
+        payroll,
+        payments,
+        advances,
+        departments,
+      },
+    };
+
+    return backupPayload;
+  },
+
+  // DOWNLOAD FULL BACKUP AS JSON FILE TO DEVICE
+  downloadDeviceBackup: async (): Promise<{ filename: string; sizeBytes: number }> => {
+    const payload = await storageService.exportAllData();
+    const jsonStr = JSON.stringify(payload, null, 2);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `workpay-backup-${dateStr}-${Date.now().toString().slice(-4)}.json`;
+
+    // Cache in local storage for safety
+    localStorage.setItem('workpay_last_local_backup', jsonStr);
+    localStorage.setItem('workpay_last_backup_date', new Date().toISOString());
+
+    // Native browser/device file download
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return { filename, sizeBytes: blob.size };
+  },
+
+  // CLEAR CLOUD DATA TO RESET QUOTA (PRESERVES LOCAL DATA)
+  clearCloudData: async (options?: { keepEmployees?: boolean }): Promise<{ deletedCount: number }> => {
+    if (!isFirebaseConfigured) {
+      return { deletedCount: 0 };
+    }
+
+    let deletedCount = 0;
+    const collectionsToClear = ['attendance', 'shifts', 'payments', 'advances', 'payroll', 'overtime_requests'];
+    if (!options?.keepEmployees) {
+      collectionsToClear.push('employees');
+    }
+
+    for (const colName of collectionsToClear) {
+      try {
+        const snap = await getDocs(collection(db, colName));
+        if (!snap.empty) {
+          const batch = writeBatch(db);
+          snap.docs.forEach((docSnap) => {
+            batch.delete(docSnap.ref);
+            deletedCount++;
+          });
+          await batch.commit();
+        }
+      } catch (err) {
+        console.error(`Error clearing cloud collection ${colName}:`, err);
+      }
+    }
+
+    return { deletedCount };
+  },
+
+  // RESTORE BACKUP DIRECTLY INTO CLOUD
+  restoreBackupToCloud: async (backupJson: any): Promise<{ restoredCount: number }> => {
+    if (!backupJson) {
+      throw new Error('Invalid backup file format.');
+    }
+
+    const payload = backupJson.data || backupJson;
+    const { employees, shifts, attendance, overtime, payroll, payments, transactions, advances } = payload;
+    const paymentRecords = payments || transactions;
+    let restoredCount = 0;
+
+    // Keep local cache completely updated
+    if (employees) setLocal(KEYS.EMPLOYEES, employees);
+    if (shifts) setLocal(KEYS.SHIFTS, shifts);
+    if (attendance) setLocal(KEYS.ATTENDANCE, attendance);
+    if (overtime) setLocal(KEYS.OVERTIME, overtime);
+    if (payroll) setLocal(KEYS.PAYROLL, payroll);
+    if (paymentRecords) setLocal(KEYS.TRANSACTIONS, paymentRecords);
+    if (advances) setLocal(KEYS.ADVANCES, advances);
+
+    if (isFirebaseConfigured) {
+      const writeCollectionBatch = async (colName: string, items: any[]) => {
+        if (!items || !items.length) return;
+        const chunkSize = 400;
+        for (let i = 0; i < items.length; i += chunkSize) {
+          const chunk = items.slice(i, i + chunkSize);
+          const batch = writeBatch(db);
+          for (const item of chunk) {
+            if (item && item.id) {
+              batch.set(doc(db, colName, item.id), item);
+              restoredCount++;
+            }
+          }
+          await batch.commit();
+        }
+      };
+
+      if (employees) await writeCollectionBatch('employees', employees);
+      if (shifts) await writeCollectionBatch('shifts', shifts);
+      if (attendance) await writeCollectionBatch('attendance', attendance);
+      if (overtime) await writeCollectionBatch('overtime_requests', overtime);
+      if (payroll) await writeCollectionBatch('payroll', payroll);
+      if (paymentRecords) await writeCollectionBatch('payments', paymentRecords);
+      if (advances) await writeCollectionBatch('advances', advances);
+    }
+
+    return { restoredCount };
   },
 };
 

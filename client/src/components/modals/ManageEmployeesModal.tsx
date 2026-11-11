@@ -4,6 +4,7 @@ import { Employee } from '../../types';
 import { useAppData } from '../../context/AppDataContext';
 import { formatINR } from '../../utils/utils';
 import { LendMoneyModal } from './LendMoneyModal';
+import { storageService } from '../../services/storageService';
 
 interface ManageEmployeesModalProps {
   isOpen: boolean;
@@ -37,28 +38,9 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
     }
   };
 
-  const handleExportBackup = () => {
+  const handleExportBackup = async () => {
     try {
-      const backupData = {
-        app: 'WorkPay',
-        version: '1.0.0',
-        exportedAt: new Date().toISOString(),
-        employees: JSON.parse(localStorage.getItem('workpay_employees') || '[]'),
-        attendance: JSON.parse(localStorage.getItem('workpay_attendance') || '[]'),
-        transactions: JSON.parse(localStorage.getItem('workpay_transactions') || '[]'),
-        shifts: JSON.parse(localStorage.getItem('workpay_shifts') || '[]'),
-        advances: JSON.parse(localStorage.getItem('workpay_advances') || '[]'),
-      };
-
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `WorkPay_Database_Backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await storageService.downloadDeviceBackup();
     } catch (err: any) {
       alert('Error exporting database backup: ' + err.message);
     }
@@ -73,22 +55,9 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
       try {
         const content = event.target?.result as string;
         const parsed = JSON.parse(content);
-
-        if (!parsed.employees || !Array.isArray(parsed.employees)) {
-          alert('Invalid WorkPay backup file.');
-          return;
-        }
-
-        if (window.confirm(`Restore database from backup? This will restore ${parsed.employees.length} workers, ${parsed.attendance?.length || 0} attendance records, and ${parsed.transactions?.length || 0} payments.`)) {
-          if (parsed.employees) localStorage.setItem('workpay_employees', JSON.stringify(parsed.employees));
-          if (parsed.attendance) localStorage.setItem('workpay_attendance', JSON.stringify(parsed.attendance));
-          if (parsed.transactions) localStorage.setItem('workpay_transactions', JSON.stringify(parsed.transactions));
-          if (parsed.shifts) localStorage.setItem('workpay_shifts', JSON.stringify(parsed.shifts));
-          if (parsed.advances) localStorage.setItem('workpay_advances', JSON.stringify(parsed.advances));
-
-          await refreshAll();
-          alert('Database restored successfully!');
-        }
+        const res = await storageService.restoreBackupToCloud(parsed);
+        await refreshAll();
+        alert(`Database restored successfully (${res.restoredCount} records synced)!`);
       } catch (err: any) {
         alert('Failed to restore backup: ' + err.message);
       }

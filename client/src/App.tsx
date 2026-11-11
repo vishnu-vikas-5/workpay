@@ -6,23 +6,46 @@ import {
   History,
   Users,
   CalendarDays,
-  Smartphone,
+  LogOut,
 } from 'lucide-react';
 import { QuickPayConsole } from './components/common/QuickPayConsole';
 import { AttendanceSection } from './components/common/AttendanceSection';
 import { PaymentHistorySection } from './components/common/PaymentHistorySection';
 import { EmployeeModal } from './components/modals/EmployeeModal';
 import { ManageEmployeesModal } from './components/modals/ManageEmployeesModal';
+import { Login } from './pages/Login';
 import { Employee } from './types';
 import { useAppData } from './context/AppDataContext';
+import { useAuth } from './context/AuthContext';
 
 export const App: React.FC = () => {
-  const { employees } = useAppData();
+  const { employees, refreshAll } = useAppData();
+  const { user, isAuthenticated, authLoading, firebaseUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'quickpay' | 'attendance' | 'history'>('quickpay');
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
 
+  // 1. Initial Authentication Loading State
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white mx-auto shadow-lg shadow-brand-500/20 animate-pulse">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <p className="text-xs font-bold text-slate-700">Connecting to WorkPay...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Gatekeeper: Before login, it MUST NOT go to the main page!
+  if (!isAuthenticated) {
+    return <Login onSuccess={() => refreshAll()} />;
+  }
+
+  // 3. Authenticated: Render Main App Dashboard
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans pb-32 sm:pb-8">
       {/* Sleek Mobile-Optimized Top Navigation Bar */}
@@ -87,6 +110,32 @@ export const App: React.FC = () => {
 
           {/* Quick Header Actions */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Logged In User Profile & Sign Out */}
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 bg-slate-100/90 rounded-xl border border-slate-200">
+              {firebaseUser?.photoURL ? (
+                <img
+                  src={firebaseUser.photoURL}
+                  alt="avatar"
+                  className="w-5 h-5 rounded-full border border-slate-300 shrink-0"
+                />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                  {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+              )}
+              <span className="text-xs font-bold text-slate-800 hidden sm:inline max-w-[130px] truncate">
+                {user?.name || user?.email?.split('@')[0] || 'Account'}
+              </span>
+              <button
+                onClick={logout}
+                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors ml-0.5"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Workers Roster Modal */}
             <button
               onClick={() => setIsManageWorkersOpen(true)}
               className="hidden sm:flex px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors items-center gap-1 sm:gap-1.5"
@@ -96,12 +145,13 @@ export const App: React.FC = () => {
               <span>Workers</span>
             </button>
 
+            {/* Add Worker Action */}
             <button
               onClick={() => {
                 setEmployeeToEdit(null);
                 setIsAddEmployeeOpen(true);
               }}
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-1 sm:gap-1.5 transition-all shrink-0"
+              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-1 sm:gap-1.5 transition-all shrink-0"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>+ Add Worker</span>

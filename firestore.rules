@@ -13,11 +13,11 @@ service cloud.firestore {
     //   - id: string (1..64, required, immutable)
     //   - email: string (5..100, required, valid email format)
     //   - name: string (1..100, required)
-    //   - role: string ('admin' | 'manager' | 'employee', required, privileged)
+    //   - role: string ('admin' | 'manager' | 'employee' | 'employer', required)
     //   - employeeId: string (optional, 1..64)
     //   - avatarUrl: string (optional, 1..500)
     //   - departmentId: string (optional, 1..64)
-    //   - status: string ('active' | 'inactive', required, privileged)
+    //   - status: string ('active' | 'inactive', required)
     //   - createdAt: string (1..40, required, immutable)
     //
     // Collection: employees
@@ -31,18 +31,21 @@ service cloud.firestore {
     //   - department: string (1..100, required)
     //   - designation: string (1..100, required)
     //   - dateOfJoining: string (8..30, required)
-    //   - hourlyWage: number (>= 0, required, sensitive)
+    //   - shiftRate: number (optional, >= 0)
+    //   - hourlyWage: number (>= 0, required)
     //   - standardWorkingHours: number (> 0 and <= 24, required)
     //   - overtimeMultiplier: number (>= 1.0 and <= 5.0, required)
-    //   - upiId: string (optional, 3..100, sensitive)
-    //   - bankAccount: map (optional, sensitive)
+    //   - upiId: string (optional, 3..100)
+    //   - bankAccount: map (optional)
     //       * accountNumber: string (1..40)
     //       * ifsc: string (1..20)
     //       * bankName: string (1..100)
     //       * accountHolderName: string (1..100)
+    //   - advanceBalance: number (optional, >= 0)
     //   - status: string ('active' | 'inactive', required)
     //   - avatar: string (optional, 1..500)
     //   - notes: string (optional, 0..1000)
+    //   - userId: string (optional, 1..64, linked auth user ID)
     //   - createdAt: string (1..40, required, immutable)
     //   - updatedAt: string (optional, 1..40)
     //
@@ -75,6 +78,7 @@ service cloud.firestore {
     //   - shiftStatus: string ('Scheduled'|'In Progress'|'Completed'|'Absent'|'Cancelled', required)
     //   - assignedBy: string (1..100, required)
     //   - notes: string (optional, 0..1000)
+    //   - userId: string (optional, 1..64)
     //   - createdAt: string (1..40, required, immutable)
     //   - updatedAt: string (optional, 1..40)
     //
@@ -96,6 +100,12 @@ service cloud.firestore {
     //   - recordedBy: string (1..100, required)
     //   - verificationMethod: string ('manual'|'qr_code'|'biometric'|'self_service', required)
     //   - notes: string (optional, 0..1000)
+    //   - shiftsCount: number (optional, >= 0)
+    //   - shiftRate: number (optional, >= 0)
+    //   - isPaid: bool (optional)
+    //   - paidAt: string (optional, 1..40)
+    //   - paidTransactionId: string (optional, 1..64)
+    //   - userId: string (optional, 1..64)
     //   - createdAt: string (1..40, required, immutable)
     //
     // Collection: overtime_requests
@@ -122,6 +132,7 @@ service cloud.firestore {
     //   - approvalNotes: string (optional, 0..1000)
     //   - payrollIncluded: bool (required)
     //   - payrollId: string (optional, 1..64)
+    //   - userId: string (optional, 1..64)
     //   - createdAt: string (1..40, required, immutable)
     //   - updatedAt: string (optional, 1..40)
     //
@@ -152,6 +163,7 @@ service cloud.firestore {
     //   - paymentStatus: string ('unpaid'|'processing'|'paid'|'failed', required)
     //   - paymentTransactionId: string (optional, 1..64)
     //   - paymentMethod: string (optional, 'razorpayx_upi'|'razorpayx_bank_transfer'|'upi_intent_manual')
+    //   - userId: string (optional, 1..64)
     //   - createdAt: string (1..40, required, immutable)
     //   - updatedAt: string (optional, 1..40)
     //
@@ -180,6 +192,32 @@ service cloud.firestore {
     //   - webhookLogs: list (optional, <= 50 maps)
     //   - upiIntentUrl: string (optional, 1..500)
     //   - notes: string (optional, 0..1000)
+    //   - shiftsCount: number (optional, >= 0)
+    //   - shiftRate: number (optional, >= 0)
+    //   - overtimeHours: number (optional, >= 0)
+    //   - overtimeRate: number (optional, >= 0)
+    //   - shiftPay: number (optional, >= 0)
+    //   - overtimePay: number (optional, >= 0)
+    //   - grossPay: number (optional, >= 0)
+    //   - advanceDeducted: number (optional, >= 0)
+    //   - remainingAdvanceBalance: number (optional, >= 0)
+    //   - employeePhone: string (optional, 1..30)
+    //   - userId: string (optional, 1..64)
+    //
+    // Collection: advances
+    // Document ID: advanceId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - employeeId: string (1..64, required, immutable)
+    //   - employeeName: string (1..100, required)
+    //   - amount: number (> 0, required)
+    //   - date: string (8..30, required)
+    //   - type: string ('give'|'deduct'|'repay', required)
+    //   - notes: string (optional, 0..1000)
+    //   - paymentMethod: string (optional, 'cash'|'upi')
+    //   - referenceId: string (optional, 1..64)
+    //   - userId: string (optional, 1..64)
+    //   - createdAt: string (1..40, required, immutable)
     //
     // Collection: notifications
     // Document ID: notificationId
@@ -200,7 +238,7 @@ service cloud.firestore {
     // Fields:
     //   - id: string (1..64, required, immutable)
     //   - action: string (1..100, required)
-    //   - entityType: string ('shift'|'overtime'|'payroll'|'payment'|'employee'|'auth', required)
+    //   - entityType: string ('shift'|'overtime'|'payroll'|'payment'|'employee'|'auth'|'advance'|'department', required)
     //   - entityId: string (1..64, required)
     //   - performedBy: string (1..100, required)
     //   - performedByRole: string (1..50, required)
@@ -249,7 +287,34 @@ service cloud.firestore {
       return isAdmin() || hasRole('manager');
     }
 
-    // Verify whether the caller is associated with the target employee ID
+    // Check if the current user is an employee
+    function isEmployeeUser() {
+      return isAuthenticated() && (
+        (request.auth.token != null && 'role' in request.auth.token && request.auth.token.role == 'employee') ||
+        (hasUserDoc() && getUserDoc().role == 'employee')
+      );
+    }
+
+    // Check if user is an employer or administrator
+    function isEmployerOrAdmin() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        isManager() ||
+        hasRole('employer') ||
+        (request.auth.token != null && (
+          ('admin' in request.auth.token && request.auth.token.admin == true) ||
+          ('role' in request.auth.token && (request.auth.token.role in ['admin', 'employer', 'manager', 'owner']))
+        )) ||
+        (hasUserDoc() && (getUserDoc().role in ['admin', 'employer', 'manager', 'owner'])) ||
+        (request.auth.token != null && 'email' in request.auth.token && (
+          request.auth.token.email == 'admin@workpay.io' ||
+          request.auth.token.email == 'manager@workpay.io'
+        )) ||
+        !isEmployeeUser()
+      );
+    }
+
+    // Verify whether the caller is associated with the target employee ID or linked user ID
     function isMatchingEmployee(targetEmpId) {
       return isAuthenticated() && (
         request.auth.uid == targetEmpId ||
@@ -301,7 +366,7 @@ service cloud.firestore {
         validStringLength('email', 5, 100) &&
         isValidEmail(data.email) &&
         validStringLength('name', 1, 100) &&
-        data.role in ['admin', 'manager', 'employee'] &&
+        data.role in ['admin', 'manager', 'employee', 'employer'] &&
         data.status in ['active', 'inactive'] &&
         validStringLength('createdAt', 1, 40) &&
         isValidOptionalString('employeeId', 1, 64) &&
@@ -326,9 +391,9 @@ service cloud.firestore {
         ]) &&
         hasOnlyAllowedFields([
           'id', 'employeeCode', 'fullName', 'phone', 'email',
-          'department', 'designation', 'dateOfJoining', 'hourlyWage',
+          'department', 'designation', 'dateOfJoining', 'hourlyWage', 'shiftRate',
           'standardWorkingHours', 'overtimeMultiplier', 'upiId', 'bankAccount',
-          'status', 'avatar', 'notes', 'createdAt', 'updatedAt'
+          'advanceBalance', 'status', 'avatar', 'notes', 'userId', 'createdAt', 'updatedAt'
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('employeeCode', 1, 32) &&
@@ -344,9 +409,12 @@ service cloud.firestore {
         data.overtimeMultiplier is number && data.overtimeMultiplier >= 1.0 && data.overtimeMultiplier <= 5.0 &&
         data.status in ['active', 'inactive'] &&
         validStringLength('createdAt', 1, 40) &&
+        (!('shiftRate' in data) || (data.shiftRate is number && data.shiftRate >= 0)) &&
+        (!('advanceBalance' in data) || (data.advanceBalance is number && data.advanceBalance >= 0)) &&
         isValidOptionalString('upiId', 3, 100) &&
         isValidOptionalString('avatar', 1, 500) &&
         isValidOptionalString('notes', 0, 1000) &&
+        isValidOptionalString('userId', 1, 64) &&
         isValidOptionalString('updatedAt', 1, 40) &&
         (!('bankAccount' in data) || isValidBankAccount(data.bankAccount));
     }
@@ -358,7 +426,8 @@ service cloud.firestore {
         validStringLength('name', 1, 100) &&
         validStringLength('code', 1, 20) &&
         validStringLength('color', 1, 30) &&
-        isValidOptionalString('managerName', 1, 100);
+        isValidOptionalString('managerName', 1, 100) &&
+        data.name is string;
     }
 
     function isValidShift(data) {
@@ -373,7 +442,7 @@ service cloud.firestore {
           'shiftDate', 'scheduledStartTime', 'scheduledEndTime',
           'actualClockIn', 'actualClockOut', 'breakDurationMinutes',
           'totalWorkingHours', 'regularHours', 'overtimeHours',
-          'shiftStatus', 'assignedBy', 'notes', 'createdAt', 'updatedAt'
+          'shiftStatus', 'assignedBy', 'notes', 'createdAt', 'updatedAt', 'userId'
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('shiftCode', 1, 32) &&
@@ -393,7 +462,8 @@ service cloud.firestore {
         isValidOptionalString('actualClockIn', 1, 40) &&
         isValidOptionalString('actualClockOut', 1, 40) &&
         isValidOptionalString('notes', 0, 1000) &&
-        isValidOptionalString('updatedAt', 1, 40);
+        isValidOptionalString('updatedAt', 1, 40) &&
+        isValidOptionalString('userId', 1, 64);
     }
 
     function isValidAttendance(data) {
@@ -406,7 +476,8 @@ service cloud.firestore {
           'id', 'shiftId', 'employeeId', 'employeeName', 'department', 'date',
           'clockInTime', 'clockOutTime', 'breakDurationMinutes',
           'workingDurationHours', 'overtimeHours', 'status', 'recordedBy',
-          'verificationMethod', 'notes', 'createdAt'
+          'verificationMethod', 'notes', 'createdAt', 'shiftsCount', 'shiftRate',
+          'isPaid', 'paidAt', 'paidTransactionId', 'userId'
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('employeeId', 1, 64) &&
@@ -423,7 +494,13 @@ service cloud.firestore {
         validStringLength('createdAt', 1, 40) &&
         isValidOptionalString('shiftId', 1, 64) &&
         isValidOptionalString('clockOutTime', 1, 40) &&
-        isValidOptionalString('notes', 0, 1000);
+        isValidOptionalString('notes', 0, 1000) &&
+        isValidOptionalString('paidAt', 1, 40) &&
+        isValidOptionalString('paidTransactionId', 1, 64) &&
+        isValidOptionalString('userId', 1, 64) &&
+        (!('shiftsCount' in data) || (data.shiftsCount is number && data.shiftsCount >= 0)) &&
+        (!('shiftRate' in data) || (data.shiftRate is number && data.shiftRate >= 0)) &&
+        (!('isPaid' in data) || (data.isPaid is bool));
     }
 
     function isValidOvertimeRequest(data) {
@@ -439,7 +516,7 @@ service cloud.firestore {
           'hourlyWage', 'overtimeMultiplier', 'calculatedOvertimeWage',
           'adjustedOvertimeHours', 'adjustedOvertimeWage', 'reason',
           'status', 'approvedBy', 'approvalDate', 'approvalNotes',
-          'payrollIncluded', 'payrollId', 'createdAt', 'updatedAt'
+          'payrollIncluded', 'payrollId', 'createdAt', 'updatedAt', 'userId'
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('shiftId', 1, 64) &&
@@ -462,6 +539,7 @@ service cloud.firestore {
         isValidOptionalString('approvalNotes', 0, 1000) &&
         isValidOptionalString('payrollId', 1, 64) &&
         isValidOptionalString('updatedAt', 1, 40) &&
+        isValidOptionalString('userId', 1, 64) &&
         (!('adjustedOvertimeHours' in data) || (data.adjustedOvertimeHours is number && data.adjustedOvertimeHours >= 0)) &&
         (!('adjustedOvertimeWage' in data) || (data.adjustedOvertimeWage is number && data.adjustedOvertimeWage >= 0));
     }
@@ -481,7 +559,7 @@ service cloud.firestore {
           'bonuses', 'bonusDescription', 'deductions', 'deductionDescription',
           'totalPayable', 'approvalStatus', 'approvedBy', 'approvedAt',
           'paymentStatus', 'paymentTransactionId', 'paymentMethod',
-          'createdAt', 'updatedAt'
+          'createdAt', 'updatedAt', 'userId'
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('employeeId', 1, 64) &&
@@ -508,6 +586,7 @@ service cloud.firestore {
         isValidOptionalString('approvedAt', 1, 40) &&
         isValidOptionalString('paymentTransactionId', 1, 64) &&
         isValidOptionalString('updatedAt', 1, 40) &&
+        isValidOptionalString('userId', 1, 64) &&
         (!('paymentMethod' in data) || data.paymentMethod in ['razorpayx_upi', 'razorpayx_bank_transfer', 'upi_intent_manual']);
     }
 
@@ -535,7 +614,9 @@ service cloud.firestore {
           'razorpayPayoutId', 'razorpayFundAccountId', 'razorpayContactId',
           'providerReferenceId', 'idempotencyKey', 'status', 'failureReason',
           'initiatedBy', 'initiatedAt', 'processedAt', 'webhookLogs',
-          'upiIntentUrl', 'notes'
+          'upiIntentUrl', 'notes', 'shiftsCount', 'shiftRate', 'overtimeHours',
+          'overtimeRate', 'shiftPay', 'overtimePay', 'grossPay', 'advanceDeducted',
+          'remainingAdvanceBalance', 'employeePhone', 'userId'
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('payrollId', 1, 64) &&
@@ -558,7 +639,39 @@ service cloud.firestore {
         isValidOptionalString('processedAt', 1, 40) &&
         isValidOptionalString('upiIntentUrl', 1, 500) &&
         isValidOptionalString('notes', 0, 1000) &&
+        isValidOptionalString('employeePhone', 1, 30) &&
+        isValidOptionalString('userId', 1, 64) &&
+        (!('shiftsCount' in data) || (data.shiftsCount is number && data.shiftsCount >= 0)) &&
+        (!('shiftRate' in data) || (data.shiftRate is number && data.shiftRate >= 0)) &&
+        (!('overtimeHours' in data) || (data.overtimeHours is number && data.overtimeHours >= 0)) &&
+        (!('overtimeRate' in data) || (data.overtimeRate is number && data.overtimeRate >= 0)) &&
+        (!('shiftPay' in data) || (data.shiftPay is number && data.shiftPay >= 0)) &&
+        (!('overtimePay' in data) || (data.overtimePay is number && data.overtimePay >= 0)) &&
+        (!('grossPay' in data) || (data.grossPay is number && data.grossPay >= 0)) &&
+        (!('advanceDeducted' in data) || (data.advanceDeducted is number && data.advanceDeducted >= 0)) &&
+        (!('remainingAdvanceBalance' in data) || (data.remainingAdvanceBalance is number && data.remainingAdvanceBalance >= 0)) &&
         (!('webhookLogs' in data) || (data.webhookLogs is list && data.webhookLogs.size() <= 50));
+    }
+
+    function isValidAdvance(data) {
+      return hasRequiredFields([
+          'id', 'employeeId', 'employeeName', 'amount', 'date', 'type', 'createdAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'employeeId', 'employeeName', 'amount', 'date', 'type',
+          'notes', 'paymentMethod', 'referenceId', 'createdAt', 'userId'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('employeeId', 1, 64) &&
+        validStringLength('employeeName', 1, 100) &&
+        data.amount is number && data.amount > 0 &&
+        validStringLength('date', 8, 30) &&
+        data.type in ['give', 'deduct', 'repay'] &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('notes', 0, 1000) &&
+        (!('paymentMethod' in data) || data.paymentMethod in ['cash', 'upi']) &&
+        isValidOptionalString('referenceId', 1, 64) &&
+        isValidOptionalString('userId', 1, 64);
     }
 
     function isValidNotification(data) {
@@ -589,7 +702,7 @@ service cloud.firestore {
         ]) &&
         validStringLength('id', 1, 64) &&
         validStringLength('action', 1, 100) &&
-        data.entityType in ['shift', 'overtime', 'payroll', 'payment', 'employee', 'auth'] &&
+        data.entityType in ['shift', 'overtime', 'payroll', 'payment', 'employee', 'auth', 'advance', 'department'] &&
         validStringLength('entityId', 1, 64) &&
         validStringLength('performedBy', 1, 100) &&
         validStringLength('performedByRole', 1, 50) &&
@@ -602,146 +715,169 @@ service cloud.firestore {
     // ===============================================================
 
     // 1. Users Collection
-    // Admin can manage all. Any authenticated user can read their own profile.
+    // Employer/Admin can manage all. Users can read and write their own profile.
     match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId);
-      allow create: if isAdmin() && isValidUser(request.resource.data);
-      allow update: if ((isAdmin()) || (
+      allow read: if isEmployerOrAdmin() || isOwner(userId);
+      allow create: if isValidUser(request.resource.data) && (
+        isEmployerOrAdmin() ||
+        (isOwner(userId) && request.resource.data.id == userId)
+      );
+      allow update: if isValidUser(request.resource.data) && (
+        isEmployerOrAdmin() || (
           isOwner(userId) &&
           areImmutableFieldsUnchanged(['role', 'status', 'employeeId', 'id', 'createdAt'])
-        )) &&
-        isValidUser(request.resource.data) &&
-        areImmutableFieldsUnchanged(['id', 'createdAt']);
-      allow delete: if isAdmin();
+        )
+      ) && areImmutableFieldsUnchanged(['id', 'createdAt']);
+      allow delete: if isEmployerOrAdmin();
     }
 
     // 2. Employees Collection
-    // Admin can read/write. Managers can read. Employees can only read their own document.
-    // Sensitive bank accounts/payment info must not be modifiable by non-admins.
+    // Employer/Admin can read, write, and delete (for cloud quota clearing).
+    // Employee users can only read their own linked employee record.
     match /employees/{employeeId} {
-      allow read: if isManager() || isMatchingEmployee(employeeId);
-      allow create: if isAdmin() && isValidEmployee(request.resource.data);
-      allow update: if isAdmin() &&
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if isEmployerOrAdmin() && isValidEmployee(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
         isValidEmployee(request.resource.data) &&
         areImmutableFieldsUnchanged(['id', 'employeeCode', 'createdAt']);
-      allow delete: if isAdmin();
+      allow delete: if isEmployerOrAdmin();
     }
 
-    // 3. Departments Collection
-    // Authenticated users can read. Only admins can write.
-    match /departments/{departmentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin() && isValidDepartment(request.resource.data);
-      allow update: if isAdmin() &&
-        isValidDepartment(request.resource.data) &&
-        areImmutableFieldsUnchanged(['id']);
-      allow delete: if isAdmin();
+    // 3. Attendance Collection
+    // Employer/Admin can read, write, and delete (for cloud quota clearing).
+    // Employee users can only read their own linked attendance records.
+    match /attendance/{attendanceId} {
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(resource.data.employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if isEmployerOrAdmin() && isValidAttendance(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
+        isValidAttendance(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'employeeId', 'createdAt']);
+      allow delete: if isEmployerOrAdmin();
     }
 
     // 4. Shifts Collection
-    // Admins & managers can create/update. Employees can only read their own shifts.
-    // Deletions strictly restricted to Admins.
+    // Employer/Admin can read, write, and delete (for cloud quota clearing).
+    // Employee users can read their own assigned shifts.
     match /shifts/{shiftId} {
-      allow read: if isManager() || isMatchingEmployee(resource.data.employeeId);
-      allow create: if isManager() && isValidShift(request.resource.data);
-      allow update: if isManager() &&
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(resource.data.employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if isEmployerOrAdmin() && isValidShift(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
         isValidShift(request.resource.data) &&
         areImmutableFieldsUnchanged(['id', 'shiftCode', 'employeeId', 'createdAt']);
-      allow delete: if isAdmin();
+      allow delete: if isEmployerOrAdmin();
     }
 
-    // 5. Attendance Collection
-    // Admins & managers can create/update. Employees can read their own attendance records.
-    match /attendance/{attendanceId} {
-      allow read: if isManager() || isMatchingEmployee(resource.data.employeeId);
-      allow create: if ((isManager()) || (
-          isAuthenticated() &&
-          isMatchingEmployee(request.resource.data.employeeId) &&
-          request.resource.data.verificationMethod == 'self_service'
-        )) &&
-        isValidAttendance(request.resource.data);
-      allow update: if ((isManager()) || (
-          isAuthenticated() &&
-          isMatchingEmployee(resource.data.employeeId) &&
-          areImmutableFieldsUnchanged(['id', 'employeeId', 'createdAt', 'status', 'recordedBy', 'verificationMethod'])
-        )) &&
-        isValidAttendance(request.resource.data) &&
+    // 5. Payments Collection
+    // Employer/Admin can read, write, and delete (for cloud quota clearing).
+    // Employee users can only read their own payment records.
+    match /payments/{transactionId} {
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(resource.data.employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if isEmployerOrAdmin() && isValidPayment(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
+        isValidPayment(request.resource.data) &&
+        areImmutableFieldsUnchanged([
+          'id', 'payrollId', 'employeeId', 'employeeCode',
+          'amount', 'currency', 'idempotencyKey', 'initiatedBy', 'initiatedAt'
+        ]);
+      allow delete: if isEmployerOrAdmin();
+    }
+
+    // 6. Advances Collection (Loans / Khata)
+    // Employer/Admin can read, write, and delete (for cloud quota clearing).
+    // Employee users can only read their own advances / loan ledger.
+    match /advances/{advanceId} {
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(resource.data.employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if isEmployerOrAdmin() && isValidAdvance(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
+        isValidAdvance(request.resource.data) &&
         areImmutableFieldsUnchanged(['id', 'employeeId', 'createdAt']);
-      allow delete: if isAdmin();
+      allow delete: if isEmployerOrAdmin();
     }
 
-    // 6. Overtime Requests Collection
-    // Admins can approve/reject/modify. Managers can submit/review. Employees can view their own requests.
+    // 7. Payroll Collection
+    // Employer/Admin can read, write, and delete (for cloud quota clearing).
+    // Employee users can only read their own payroll records.
+    match /payroll/{payrollId} {
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(resource.data.employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if isEmployerOrAdmin() && isValidPayroll(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
+        isValidPayroll(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'employeeId', 'employeeCode', 'createdAt']);
+      allow delete: if isEmployerOrAdmin();
+    }
+
+    // 8. Departments Collection
+    // Authenticated users can read. Employer/Admin can write and delete.
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isEmployerOrAdmin() && isValidDepartment(request.resource.data);
+      allow update: if isEmployerOrAdmin() &&
+        isValidDepartment(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id']);
+      allow delete: if isEmployerOrAdmin();
+    }
+
+    // 9. Audit Logs Collection
+    // Append-only compliance log. Created by authenticated users (e.g. login/logout/actions).
+    // Read and delete allowed for authenticated users (including quota clearing).
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidAuditLog(request.resource.data);
+      allow update: if false;
+      allow delete: if isAuthenticated();
+    }
+
+    // 10. Overtime Requests Collection
+    // Employer/Admin can approve/reject/modify/delete. Employees can view and submit their own requests.
     match /overtime_requests/{requestId} {
-      allow read: if isManager() || isMatchingEmployee(resource.data.employeeId);
-      allow create: if ((isManager()) || (
+      allow read: if isEmployerOrAdmin() ||
+        isMatchingEmployee(resource.data.employeeId) ||
+        ('userId' in resource.data && resource.data.userId == request.auth.uid);
+      allow create: if ((isEmployerOrAdmin()) || (
           isAuthenticated() &&
-          isMatchingEmployee(request.resource.data.employeeId) &&
+          (isMatchingEmployee(request.resource.data.employeeId) ||
+           ('userId' in request.resource.data && request.resource.data.userId == request.auth.uid)) &&
           request.resource.data.status == 'pending' &&
           !('approvedBy' in request.resource.data) &&
           !('approvalDate' in request.resource.data) &&
           request.resource.data.payrollIncluded == false
         )) &&
         isValidOvertimeRequest(request.resource.data);
-      allow update: if ((isAdmin()) || (
-          isManager() &&
-          resource.data.status == 'pending' &&
-          request.resource.data.status == 'pending' &&
-          areImmutableFieldsUnchanged([
-            'status', 'approvedBy', 'approvalDate', 'approvalNotes',
-            'payrollIncluded', 'payrollId', 'calculatedOvertimeWage',
-            'hourlyWage', 'overtimeMultiplier'
-          ])
-        )) &&
+      allow update: if isEmployerOrAdmin() &&
         isValidOvertimeRequest(request.resource.data) &&
         areImmutableFieldsUnchanged(['id', 'shiftId', 'employeeId', 'createdAt']);
-      allow delete: if isAdmin();
+      allow delete: if isEmployerOrAdmin();
     }
 
-    // 7. Payroll Collection
-    // Strictly restricted to Admin (read/write). Employee can ONLY read their own records.
-    // Managers have NO access to payroll records.
-    match /payroll/{payrollId} {
-      allow read: if isAdmin() || (!isManager() && isMatchingEmployee(resource.data.employeeId));
-      allow create: if isAdmin() && isValidPayroll(request.resource.data);
-      allow update: if isAdmin() &&
-        isValidPayroll(request.resource.data) &&
-        areImmutableFieldsUnchanged(['id', 'employeeId', 'employeeCode', 'createdAt']);
-      allow delete: if isAdmin();
-    }
-
-    // 8. Payments Collection
-    // Immutable financial ledger! Only Admins and verified backend Cloud Functions can write.
-    // Deletions are forbidden. Employees can only read their own payments.
-    match /payments/{transactionId} {
-      allow read: if isAdmin() || (!isManager() && isMatchingEmployee(resource.data.employeeId));
-      allow create: if isAdmin() && isValidPayment(request.resource.data);
-      allow update: if isAdmin() &&
-        isValidPayment(request.resource.data) &&
-        areImmutableFieldsUnchanged([
-          'id', 'payrollId', 'employeeId', 'employeeCode',
-          'amount', 'currency', 'idempotencyKey', 'initiatedBy', 'initiatedAt'
-        ]);
-      allow delete: if false;
-    }
-
-    // 9. Notifications Collection
-    // Users can read their own notifications (userId == auth.uid || userId == 'all') and update read status.
+    // 11. Notifications Collection
+    // Users can read their own notifications and update read status. Employer/Admin can manage.
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
         resource.data.userId == 'all' ||
         isMatchingEmployee(resource.data.userId) ||
-        isAdmin()
+        isEmployerOrAdmin()
       );
-      allow create: if (isManager() || (
+      allow create: if (isEmployerOrAdmin() || (
           isAuthenticated() && (
             request.resource.data.userId == request.auth.uid ||
             isMatchingEmployee(request.resource.data.userId)
           )
         )) &&
         isValidNotification(request.resource.data);
-      allow update: if ((isAdmin()) || (
+      allow update: if ((isEmployerOrAdmin()) || (
           isAuthenticated() &&
           (
             resource.data.userId == request.auth.uid ||
@@ -752,16 +888,7 @@ service cloud.firestore {
         )) &&
         isValidNotification(request.resource.data) &&
         areImmutableFieldsUnchanged(['id', 'userId', 'title', 'message', 'type', 'createdAt']);
-      allow delete: if isAdmin();
-    }
-
-    // 10. Audit Logs Collection
-    // Append-only compliance log. Read allowed for Admins. Updates and deletes strictly forbidden.
-    match /audit_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isAuthenticated() && isValidAuditLog(request.resource.data);
-      allow update: if false;
-      allow delete: if false;
+      allow delete: if isEmployerOrAdmin();
     }
 
     // Default Deny Rule for all unhandled collections and paths

@@ -247,25 +247,6 @@ export const Topbar: React.FC<TopbarProps> = ({
                 </span>
               </div>
 
-              <div className="py-1">
-                <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Switch Active Role
-                </div>
-                {(['admin', 'manager', 'employee'] as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      switchRole(r);
-                      setProfileOpen(false);
-                    }}
-                    className="w-full px-4 py-2 text-xs text-left flex items-center justify-between text-slate-700 hover:bg-slate-50 capitalize"
-                  >
-                    <span>{r} View</span>
-                    {role === r && <Check className="w-3.5 h-3.5 text-brand-600" />}
-                  </button>
-                ))}
-              </div>
-
               <div className="border-t border-slate-100 pt-1">
                 <button
                   onClick={() => {
