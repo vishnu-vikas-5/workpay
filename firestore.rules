@@ -1,0 +1,772 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model & Schema Definitions
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (matches auth.uid)
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - email: string (5..100, required, valid email format)
+    //   - name: string (1..100, required)
+    //   - role: string ('admin' | 'manager' | 'employee', required, privileged)
+    //   - employeeId: string (optional, 1..64)
+    //   - avatarUrl: string (optional, 1..500)
+    //   - departmentId: string (optional, 1..64)
+    //   - status: string ('active' | 'inactive', required, privileged)
+    //   - createdAt: string (1..40, required, immutable)
+    //
+    // Collection: employees
+    // Document ID: employeeId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - employeeCode: string (1..32, required, immutable)
+    //   - fullName: string (1..100, required)
+    //   - phone: string (1..30, required)
+    //   - email: string (5..100, required, valid email format)
+    //   - department: string (1..100, required)
+    //   - designation: string (1..100, required)
+    //   - dateOfJoining: string (8..30, required)
+    //   - hourlyWage: number (>= 0, required, sensitive)
+    //   - standardWorkingHours: number (> 0 and <= 24, required)
+    //   - overtimeMultiplier: number (>= 1.0 and <= 5.0, required)
+    //   - upiId: string (optional, 3..100, sensitive)
+    //   - bankAccount: map (optional, sensitive)
+    //       * accountNumber: string (1..40)
+    //       * ifsc: string (1..20)
+    //       * bankName: string (1..100)
+    //       * accountHolderName: string (1..100)
+    //   - status: string ('active' | 'inactive', required)
+    //   - avatar: string (optional, 1..500)
+    //   - notes: string (optional, 0..1000)
+    //   - createdAt: string (1..40, required, immutable)
+    //   - updatedAt: string (optional, 1..40)
+    //
+    // Collection: departments
+    // Document ID: departmentId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - name: string (1..100, required)
+    //   - code: string (1..20, required)
+    //   - color: string (1..30, required)
+    //   - managerName: string (optional, 1..100)
+    //
+    // Collection: shifts
+    // Document ID: shiftId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - shiftCode: string (1..32, required, immutable)
+    //   - employeeId: string (1..64, required, immutable)
+    //   - employeeName: string (1..100, required)
+    //   - department: string (1..100, required)
+    //   - shiftDate: string (8..30, required)
+    //   - scheduledStartTime: string (1..20, required)
+    //   - scheduledEndTime: string (1..20, required)
+    //   - actualClockIn: string (optional, 1..40)
+    //   - actualClockOut: string (optional, 1..40)
+    //   - breakDurationMinutes: number (>= 0 and <= 480, required)
+    //   - totalWorkingHours: number (>= 0 and <= 24, required)
+    //   - regularHours: number (>= 0 and <= 24, required)
+    //   - overtimeHours: number (>= 0 and <= 24, required)
+    //   - shiftStatus: string ('Scheduled'|'In Progress'|'Completed'|'Absent'|'Cancelled', required)
+    //   - assignedBy: string (1..100, required)
+    //   - notes: string (optional, 0..1000)
+    //   - createdAt: string (1..40, required, immutable)
+    //   - updatedAt: string (optional, 1..40)
+    //
+    // Collection: attendance
+    // Document ID: attendanceId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - shiftId: string (optional, 1..64)
+    //   - employeeId: string (1..64, required, immutable)
+    //   - employeeName: string (1..100, required)
+    //   - department: string (1..100, required)
+    //   - date: string (8..30, required)
+    //   - clockInTime: string (1..40, required)
+    //   - clockOutTime: string (optional, 1..40)
+    //   - breakDurationMinutes: number (>= 0 and <= 480, required)
+    //   - workingDurationHours: number (>= 0 and <= 24, required)
+    //   - overtimeHours: number (>= 0 and <= 24, required)
+    //   - status: string ('present'|'absent'|'half-day'|'on-leave', required)
+    //   - recordedBy: string (1..100, required)
+    //   - verificationMethod: string ('manual'|'qr_code'|'biometric'|'self_service', required)
+    //   - notes: string (optional, 0..1000)
+    //   - createdAt: string (1..40, required, immutable)
+    //
+    // Collection: overtime_requests
+    // Document ID: requestId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - shiftId: string (1..64, required, immutable)
+    //   - employeeId: string (1..64, required, immutable)
+    //   - employeeName: string (1..100, required)
+    //   - department: string (1..100, required)
+    //   - date: string (8..30, required)
+    //   - scheduledHours: number (>= 0 and <= 24, required)
+    //   - actualHours: number (>= 0 and <= 24, required)
+    //   - overtimeHours: number (>= 0 and <= 24, required)
+    //   - hourlyWage: number (>= 0, required)
+    //   - overtimeMultiplier: number (>= 1.0 and <= 5.0, required)
+    //   - calculatedOvertimeWage: number (>= 0, required)
+    //   - adjustedOvertimeHours: number (optional, >= 0)
+    //   - adjustedOvertimeWage: number (optional, >= 0)
+    //   - reason: string (optional, 0..500)
+    //   - status: string ('pending'|'approved'|'rejected', required)
+    //   - approvedBy: string (optional, 1..100)
+    //   - approvalDate: string (optional, 1..40)
+    //   - approvalNotes: string (optional, 0..1000)
+    //   - payrollIncluded: bool (required)
+    //   - payrollId: string (optional, 1..64)
+    //   - createdAt: string (1..40, required, immutable)
+    //   - updatedAt: string (optional, 1..40)
+    //
+    // Collection: payroll
+    // Document ID: payrollId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - employeeId: string (1..64, required, immutable)
+    //   - employeeName: string (1..100, required)
+    //   - employeeCode: string (1..32, required, immutable)
+    //   - department: string (1..100, required)
+    //   - periodType: string ('daily'|'weekly'|'monthly', required)
+    //   - periodStartDate: string (8..30, required)
+    //   - periodEndDate: string (8..30, required)
+    //   - totalShifts: number (>= 0, required)
+    //   - regularHours: number (>= 0, required)
+    //   - overtimeHours: number (>= 0, required)
+    //   - regularWages: number (>= 0, required)
+    //   - overtimeWages: number (>= 0, required)
+    //   - bonuses: number (>= 0, required)
+    //   - bonusDescription: string (optional, 0..250)
+    //   - deductions: number (>= 0, required)
+    //   - deductionDescription: string (optional, 0..250)
+    //   - totalPayable: number (>= 0, required)
+    //   - approvalStatus: string ('draft'|'pending_approval'|'approved'|'rejected', required)
+    //   - approvedBy: string (optional, 1..100)
+    //   - approvedAt: string (optional, 1..40)
+    //   - paymentStatus: string ('unpaid'|'processing'|'paid'|'failed', required)
+    //   - paymentTransactionId: string (optional, 1..64)
+    //   - paymentMethod: string (optional, 'razorpayx_upi'|'razorpayx_bank_transfer'|'upi_intent_manual')
+    //   - createdAt: string (1..40, required, immutable)
+    //   - updatedAt: string (optional, 1..40)
+    //
+    // Collection: payments
+    // Document ID: transactionId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - payrollId: string (1..64, required, immutable)
+    //   - employeeId: string (1..64, required, immutable)
+    //   - employeeName: string (1..100, required)
+    //   - employeeCode: string (1..32, required, immutable)
+    //   - amount: number (> 0, required, immutable)
+    //   - currency: string ('INR', required, immutable)
+    //   - paymentMethod: string ('razorpayx_upi'|'razorpayx_bank_transfer'|'upi_intent_manual', required)
+    //   - destination: map (required)
+    //   - razorpayPayoutId: string (optional, 1..100)
+    //   - razorpayFundAccountId: string (optional, 1..100)
+    //   - razorpayContactId: string (optional, 1..100)
+    //   - providerReferenceId: string (optional, 1..100)
+    //   - idempotencyKey: string (1..100, required, immutable)
+    //   - status: string ('Draft'|'Pending Approval'|'Processing'|'Successful'|'Failed'|'Reversed', required)
+    //   - failureReason: string (optional, 0..500)
+    //   - initiatedBy: string (1..100, required, immutable)
+    //   - initiatedAt: string (1..40, required, immutable)
+    //   - processedAt: string (optional, 1..40)
+    //   - webhookLogs: list (optional, <= 50 maps)
+    //   - upiIntentUrl: string (optional, 1..500)
+    //   - notes: string (optional, 0..1000)
+    //
+    // Collection: notifications
+    // Document ID: notificationId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - userId: string (1..64, required, immutable)
+    //   - title: string (1..200, required)
+    //   - message: string (1..1000, required)
+    //   - type: string ('shift_assigned'|'shift_changed'|'attendance_confirmed'|
+    //                   'overtime_approved'|'overtime_submitted'|'payroll_ready'|
+    //                   'payment_success'|'payment_failed'|'system', required)
+    //   - link: string (optional, 1..250)
+    //   - read: bool (required)
+    //   - createdAt: string (1..40, required, immutable)
+    //
+    // Collection: audit_logs
+    // Document ID: logId
+    // Fields:
+    //   - id: string (1..64, required, immutable)
+    //   - action: string (1..100, required)
+    //   - entityType: string ('shift'|'overtime'|'payroll'|'payment'|'employee'|'auth', required)
+    //   - entityId: string (1..64, required)
+    //   - performedBy: string (1..100, required)
+    //   - performedByRole: string (1..50, required)
+    //   - details: map (required)
+    //   - timestamp: string (1..40, required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Standard Helper Functions Library
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasUserDoc() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Role-based access control checking custom claims, bootstrap email, or user profile doc
+    function hasRole(roleName) {
+      return isAuthenticated() && (
+        (request.auth.token != null && 'role' in request.auth.token && request.auth.token.role == roleName) ||
+        (hasUserDoc() && getUserDoc().role == roleName)
+      );
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token != null && 'admin' in request.auth.token && request.auth.token.admin == true) ||
+        hasRole('admin') ||
+        (request.auth.token != null && 'email' in request.auth.token && request.auth.token.email == 'admin@workpay.io')
+      );
+    }
+
+    function isManager() {
+      return isAdmin() || hasRole('manager');
+    }
+
+    // Verify whether the caller is associated with the target employee ID
+    function isMatchingEmployee(targetEmpId) {
+      return isAuthenticated() && (
+        request.auth.uid == targetEmpId ||
+        (request.auth.token != null && 'employeeId' in request.auth.token && request.auth.token.employeeId == targetEmpId) ||
+        (hasUserDoc() && 'employeeId' in getUserDoc() && getUserDoc().employeeId == targetEmpId)
+      );
+    }
+
+    // Field constraints & validations
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return field in request.resource.data &&
+        request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators (Applied on BOTH create and update)
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['id', 'email', 'name', 'role', 'status', 'createdAt']) &&
+        hasOnlyAllowedFields(['id', 'email', 'name', 'role', 'employeeId', 'avatarUrl', 'departmentId', 'status', 'createdAt']) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('email', 5, 100) &&
+        isValidEmail(data.email) &&
+        validStringLength('name', 1, 100) &&
+        data.role in ['admin', 'manager', 'employee'] &&
+        data.status in ['active', 'inactive'] &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('employeeId', 1, 64) &&
+        isValidOptionalString('departmentId', 1, 64) &&
+        isValidOptionalString('avatarUrl', 1, 500);
+    }
+
+    function isValidBankAccount(account) {
+      return account is map &&
+        account.keys().hasOnly(['accountNumber', 'ifsc', 'bankName', 'accountHolderName']) &&
+        account.accountNumber is string && account.accountNumber.size() >= 1 && account.accountNumber.size() <= 40 &&
+        account.ifsc is string && account.ifsc.size() >= 1 && account.ifsc.size() <= 20 &&
+        account.bankName is string && account.bankName.size() >= 1 && account.bankName.size() <= 100 &&
+        account.accountHolderName is string && account.accountHolderName.size() >= 1 && account.accountHolderName.size() <= 100;
+    }
+
+    function isValidEmployee(data) {
+      return hasRequiredFields([
+          'id', 'employeeCode', 'fullName', 'phone', 'email',
+          'department', 'designation', 'dateOfJoining', 'hourlyWage',
+          'standardWorkingHours', 'overtimeMultiplier', 'status', 'createdAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'employeeCode', 'fullName', 'phone', 'email',
+          'department', 'designation', 'dateOfJoining', 'hourlyWage',
+          'standardWorkingHours', 'overtimeMultiplier', 'upiId', 'bankAccount',
+          'status', 'avatar', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('employeeCode', 1, 32) &&
+        validStringLength('fullName', 1, 100) &&
+        validStringLength('phone', 1, 30) &&
+        validStringLength('email', 5, 100) &&
+        isValidEmail(data.email) &&
+        validStringLength('department', 1, 100) &&
+        validStringLength('designation', 1, 100) &&
+        validStringLength('dateOfJoining', 8, 30) &&
+        data.hourlyWage is number && data.hourlyWage >= 0 &&
+        data.standardWorkingHours is number && data.standardWorkingHours > 0 && data.standardWorkingHours <= 24 &&
+        data.overtimeMultiplier is number && data.overtimeMultiplier >= 1.0 && data.overtimeMultiplier <= 5.0 &&
+        data.status in ['active', 'inactive'] &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('upiId', 3, 100) &&
+        isValidOptionalString('avatar', 1, 500) &&
+        isValidOptionalString('notes', 0, 1000) &&
+        isValidOptionalString('updatedAt', 1, 40) &&
+        (!('bankAccount' in data) || isValidBankAccount(data.bankAccount));
+    }
+
+    function isValidDepartment(data) {
+      return hasRequiredFields(['id', 'name', 'code', 'color']) &&
+        hasOnlyAllowedFields(['id', 'name', 'code', 'color', 'managerName']) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('name', 1, 100) &&
+        validStringLength('code', 1, 20) &&
+        validStringLength('color', 1, 30) &&
+        isValidOptionalString('managerName', 1, 100);
+    }
+
+    function isValidShift(data) {
+      return hasRequiredFields([
+          'id', 'shiftCode', 'employeeId', 'employeeName', 'department',
+          'shiftDate', 'scheduledStartTime', 'scheduledEndTime',
+          'breakDurationMinutes', 'totalWorkingHours', 'regularHours',
+          'overtimeHours', 'shiftStatus', 'assignedBy', 'createdAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'shiftCode', 'employeeId', 'employeeName', 'department',
+          'shiftDate', 'scheduledStartTime', 'scheduledEndTime',
+          'actualClockIn', 'actualClockOut', 'breakDurationMinutes',
+          'totalWorkingHours', 'regularHours', 'overtimeHours',
+          'shiftStatus', 'assignedBy', 'notes', 'createdAt', 'updatedAt'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('shiftCode', 1, 32) &&
+        validStringLength('employeeId', 1, 64) &&
+        validStringLength('employeeName', 1, 100) &&
+        validStringLength('department', 1, 100) &&
+        validStringLength('shiftDate', 8, 30) &&
+        validStringLength('scheduledStartTime', 1, 20) &&
+        validStringLength('scheduledEndTime', 1, 20) &&
+        data.breakDurationMinutes is number && data.breakDurationMinutes >= 0 && data.breakDurationMinutes <= 480 &&
+        data.totalWorkingHours is number && data.totalWorkingHours >= 0 && data.totalWorkingHours <= 24 &&
+        data.regularHours is number && data.regularHours >= 0 && data.regularHours <= 24 &&
+        data.overtimeHours is number && data.overtimeHours >= 0 && data.overtimeHours <= 24 &&
+        data.shiftStatus in ['Scheduled', 'In Progress', 'Completed', 'Absent', 'Cancelled'] &&
+        validStringLength('assignedBy', 1, 100) &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('actualClockIn', 1, 40) &&
+        isValidOptionalString('actualClockOut', 1, 40) &&
+        isValidOptionalString('notes', 0, 1000) &&
+        isValidOptionalString('updatedAt', 1, 40);
+    }
+
+    function isValidAttendance(data) {
+      return hasRequiredFields([
+          'id', 'employeeId', 'employeeName', 'department', 'date',
+          'clockInTime', 'breakDurationMinutes', 'workingDurationHours',
+          'overtimeHours', 'status', 'recordedBy', 'verificationMethod', 'createdAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'shiftId', 'employeeId', 'employeeName', 'department', 'date',
+          'clockInTime', 'clockOutTime', 'breakDurationMinutes',
+          'workingDurationHours', 'overtimeHours', 'status', 'recordedBy',
+          'verificationMethod', 'notes', 'createdAt'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('employeeId', 1, 64) &&
+        validStringLength('employeeName', 1, 100) &&
+        validStringLength('department', 1, 100) &&
+        validStringLength('date', 8, 30) &&
+        validStringLength('clockInTime', 1, 40) &&
+        data.breakDurationMinutes is number && data.breakDurationMinutes >= 0 && data.breakDurationMinutes <= 480 &&
+        data.workingDurationHours is number && data.workingDurationHours >= 0 && data.workingDurationHours <= 24 &&
+        data.overtimeHours is number && data.overtimeHours >= 0 && data.overtimeHours <= 24 &&
+        data.status in ['present', 'absent', 'half-day', 'on-leave'] &&
+        validStringLength('recordedBy', 1, 100) &&
+        data.verificationMethod in ['manual', 'qr_code', 'biometric', 'self_service'] &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('shiftId', 1, 64) &&
+        isValidOptionalString('clockOutTime', 1, 40) &&
+        isValidOptionalString('notes', 0, 1000);
+    }
+
+    function isValidOvertimeRequest(data) {
+      return hasRequiredFields([
+          'id', 'shiftId', 'employeeId', 'employeeName', 'department',
+          'date', 'scheduledHours', 'actualHours', 'overtimeHours',
+          'hourlyWage', 'overtimeMultiplier', 'calculatedOvertimeWage',
+          'status', 'payrollIncluded', 'createdAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'shiftId', 'employeeId', 'employeeName', 'department',
+          'date', 'scheduledHours', 'actualHours', 'overtimeHours',
+          'hourlyWage', 'overtimeMultiplier', 'calculatedOvertimeWage',
+          'adjustedOvertimeHours', 'adjustedOvertimeWage', 'reason',
+          'status', 'approvedBy', 'approvalDate', 'approvalNotes',
+          'payrollIncluded', 'payrollId', 'createdAt', 'updatedAt'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('shiftId', 1, 64) &&
+        validStringLength('employeeId', 1, 64) &&
+        validStringLength('employeeName', 1, 100) &&
+        validStringLength('department', 1, 100) &&
+        validStringLength('date', 8, 30) &&
+        data.scheduledHours is number && data.scheduledHours >= 0 && data.scheduledHours <= 24 &&
+        data.actualHours is number && data.actualHours >= 0 && data.actualHours <= 24 &&
+        data.overtimeHours is number && data.overtimeHours >= 0 && data.overtimeHours <= 24 &&
+        data.hourlyWage is number && data.hourlyWage >= 0 &&
+        data.overtimeMultiplier is number && data.overtimeMultiplier >= 1.0 && data.overtimeMultiplier <= 5.0 &&
+        data.calculatedOvertimeWage is number && data.calculatedOvertimeWage >= 0 &&
+        data.status in ['pending', 'approved', 'rejected'] &&
+        data.payrollIncluded is bool &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('reason', 0, 500) &&
+        isValidOptionalString('approvedBy', 1, 100) &&
+        isValidOptionalString('approvalDate', 1, 40) &&
+        isValidOptionalString('approvalNotes', 0, 1000) &&
+        isValidOptionalString('payrollId', 1, 64) &&
+        isValidOptionalString('updatedAt', 1, 40) &&
+        (!('adjustedOvertimeHours' in data) || (data.adjustedOvertimeHours is number && data.adjustedOvertimeHours >= 0)) &&
+        (!('adjustedOvertimeWage' in data) || (data.adjustedOvertimeWage is number && data.adjustedOvertimeWage >= 0));
+    }
+
+    function isValidPayroll(data) {
+      return hasRequiredFields([
+          'id', 'employeeId', 'employeeName', 'employeeCode', 'department',
+          'periodType', 'periodStartDate', 'periodEndDate', 'totalShifts',
+          'regularHours', 'overtimeHours', 'regularWages', 'overtimeWages',
+          'bonuses', 'deductions', 'totalPayable', 'approvalStatus',
+          'paymentStatus', 'createdAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'employeeId', 'employeeName', 'employeeCode', 'department',
+          'periodType', 'periodStartDate', 'periodEndDate', 'totalShifts',
+          'regularHours', 'overtimeHours', 'regularWages', 'overtimeWages',
+          'bonuses', 'bonusDescription', 'deductions', 'deductionDescription',
+          'totalPayable', 'approvalStatus', 'approvedBy', 'approvedAt',
+          'paymentStatus', 'paymentTransactionId', 'paymentMethod',
+          'createdAt', 'updatedAt'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('employeeId', 1, 64) &&
+        validStringLength('employeeName', 1, 100) &&
+        validStringLength('employeeCode', 1, 32) &&
+        validStringLength('department', 1, 100) &&
+        data.periodType in ['daily', 'weekly', 'monthly'] &&
+        validStringLength('periodStartDate', 8, 30) &&
+        validStringLength('periodEndDate', 8, 30) &&
+        data.totalShifts is number && data.totalShifts >= 0 &&
+        data.regularHours is number && data.regularHours >= 0 &&
+        data.overtimeHours is number && data.overtimeHours >= 0 &&
+        data.regularWages is number && data.regularWages >= 0 &&
+        data.overtimeWages is number && data.overtimeWages >= 0 &&
+        data.bonuses is number && data.bonuses >= 0 &&
+        data.deductions is number && data.deductions >= 0 &&
+        data.totalPayable is number && data.totalPayable >= 0 &&
+        data.approvalStatus in ['draft', 'pending_approval', 'approved', 'rejected'] &&
+        data.paymentStatus in ['unpaid', 'processing', 'paid', 'failed'] &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('bonusDescription', 0, 250) &&
+        isValidOptionalString('deductionDescription', 0, 250) &&
+        isValidOptionalString('approvedBy', 1, 100) &&
+        isValidOptionalString('approvedAt', 1, 40) &&
+        isValidOptionalString('paymentTransactionId', 1, 64) &&
+        isValidOptionalString('updatedAt', 1, 40) &&
+        (!('paymentMethod' in data) || data.paymentMethod in ['razorpayx_upi', 'razorpayx_bank_transfer', 'upi_intent_manual']);
+    }
+
+    function isValidPaymentDestination(dest) {
+      return dest is map &&
+        dest.keys().hasOnly(['type', 'upiId', 'maskedAccount', 'accountNumber', 'ifsc', 'bankName', 'beneficiaryName']) &&
+        dest.type in ['vpa', 'bank_account'] &&
+        dest.beneficiaryName is string && dest.beneficiaryName.size() >= 1 && dest.beneficiaryName.size() <= 100 &&
+        (!('upiId' in dest) || (dest.upiId is string && dest.upiId.size() <= 100)) &&
+        (!('maskedAccount' in dest) || (dest.maskedAccount is string && dest.maskedAccount.size() <= 40)) &&
+        (!('accountNumber' in dest) || (dest.accountNumber is string && dest.accountNumber.size() <= 40)) &&
+        (!('ifsc' in dest) || (dest.ifsc is string && dest.ifsc.size() <= 20)) &&
+        (!('bankName' in dest) || (dest.bankName is string && dest.bankName.size() <= 100));
+    }
+
+    function isValidPayment(data) {
+      return hasRequiredFields([
+          'id', 'payrollId', 'employeeId', 'employeeName', 'employeeCode',
+          'amount', 'currency', 'paymentMethod', 'destination',
+          'idempotencyKey', 'status', 'initiatedBy', 'initiatedAt'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'payrollId', 'employeeId', 'employeeName', 'employeeCode',
+          'amount', 'currency', 'paymentMethod', 'destination',
+          'razorpayPayoutId', 'razorpayFundAccountId', 'razorpayContactId',
+          'providerReferenceId', 'idempotencyKey', 'status', 'failureReason',
+          'initiatedBy', 'initiatedAt', 'processedAt', 'webhookLogs',
+          'upiIntentUrl', 'notes'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('payrollId', 1, 64) &&
+        validStringLength('employeeId', 1, 64) &&
+        validStringLength('employeeName', 1, 100) &&
+        validStringLength('employeeCode', 1, 32) &&
+        data.amount is number && data.amount > 0 &&
+        data.currency == 'INR' &&
+        data.paymentMethod in ['razorpayx_upi', 'razorpayx_bank_transfer', 'upi_intent_manual'] &&
+        isValidPaymentDestination(data.destination) &&
+        validStringLength('idempotencyKey', 1, 100) &&
+        data.status in ['Draft', 'Pending Approval', 'Processing', 'Successful', 'Failed', 'Reversed'] &&
+        validStringLength('initiatedBy', 1, 100) &&
+        validStringLength('initiatedAt', 1, 40) &&
+        isValidOptionalString('razorpayPayoutId', 1, 100) &&
+        isValidOptionalString('razorpayFundAccountId', 1, 100) &&
+        isValidOptionalString('razorpayContactId', 1, 100) &&
+        isValidOptionalString('providerReferenceId', 1, 100) &&
+        isValidOptionalString('failureReason', 0, 500) &&
+        isValidOptionalString('processedAt', 1, 40) &&
+        isValidOptionalString('upiIntentUrl', 1, 500) &&
+        isValidOptionalString('notes', 0, 1000) &&
+        (!('webhookLogs' in data) || (data.webhookLogs is list && data.webhookLogs.size() <= 50));
+    }
+
+    function isValidNotification(data) {
+      return hasRequiredFields(['id', 'userId', 'title', 'message', 'type', 'read', 'createdAt']) &&
+        hasOnlyAllowedFields(['id', 'userId', 'title', 'message', 'type', 'link', 'read', 'createdAt']) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('userId', 1, 64) &&
+        validStringLength('title', 1, 200) &&
+        validStringLength('message', 1, 1000) &&
+        data.type in [
+          'shift_assigned', 'shift_changed', 'attendance_confirmed',
+          'overtime_approved', 'overtime_submitted', 'payroll_ready',
+          'payment_success', 'payment_failed', 'system'
+        ] &&
+        data.read is bool &&
+        validStringLength('createdAt', 1, 40) &&
+        isValidOptionalString('link', 1, 250);
+    }
+
+    function isValidAuditLog(data) {
+      return hasRequiredFields([
+          'id', 'action', 'entityType', 'entityId',
+          'performedBy', 'performedByRole', 'details', 'timestamp'
+        ]) &&
+        hasOnlyAllowedFields([
+          'id', 'action', 'entityType', 'entityId',
+          'performedBy', 'performedByRole', 'details', 'timestamp'
+        ]) &&
+        validStringLength('id', 1, 64) &&
+        validStringLength('action', 1, 100) &&
+        data.entityType in ['shift', 'overtime', 'payroll', 'payment', 'employee', 'auth'] &&
+        validStringLength('entityId', 1, 64) &&
+        validStringLength('performedBy', 1, 100) &&
+        validStringLength('performedByRole', 1, 50) &&
+        data.details is map &&
+        validStringLength('timestamp', 1, 40);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // 1. Users Collection
+    // Admin can manage all. Any authenticated user can read their own profile.
+    match /users/{userId} {
+      allow read: if isAdmin() || isOwner(userId);
+      allow create: if isAdmin() && isValidUser(request.resource.data);
+      allow update: if ((isAdmin()) || (
+          isOwner(userId) &&
+          areImmutableFieldsUnchanged(['role', 'status', 'employeeId', 'id', 'createdAt'])
+        )) &&
+        isValidUser(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 2. Employees Collection
+    // Admin can read/write. Managers can read. Employees can only read their own document.
+    // Sensitive bank accounts/payment info must not be modifiable by non-admins.
+    match /employees/{employeeId} {
+      allow read: if isManager() || isMatchingEmployee(employeeId);
+      allow create: if isAdmin() && isValidEmployee(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidEmployee(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'employeeCode', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 3. Departments Collection
+    // Authenticated users can read. Only admins can write.
+    match /departments/{departmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidDepartment(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidDepartment(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id']);
+      allow delete: if isAdmin();
+    }
+
+    // 4. Shifts Collection
+    // Admins & managers can create/update. Employees can only read their own shifts.
+    // Deletions strictly restricted to Admins.
+    match /shifts/{shiftId} {
+      allow read: if isManager() || isMatchingEmployee(resource.data.employeeId);
+      allow create: if isManager() && isValidShift(request.resource.data);
+      allow update: if isManager() &&
+        isValidShift(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'shiftCode', 'employeeId', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 5. Attendance Collection
+    // Admins & managers can create/update. Employees can read their own attendance records.
+    match /attendance/{attendanceId} {
+      allow read: if isManager() || isMatchingEmployee(resource.data.employeeId);
+      allow create: if ((isManager()) || (
+          isAuthenticated() &&
+          isMatchingEmployee(request.resource.data.employeeId) &&
+          request.resource.data.verificationMethod == 'self_service'
+        )) &&
+        isValidAttendance(request.resource.data);
+      allow update: if ((isManager()) || (
+          isAuthenticated() &&
+          isMatchingEmployee(resource.data.employeeId) &&
+          areImmutableFieldsUnchanged(['id', 'employeeId', 'createdAt', 'status', 'recordedBy', 'verificationMethod'])
+        )) &&
+        isValidAttendance(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'employeeId', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 6. Overtime Requests Collection
+    // Admins can approve/reject/modify. Managers can submit/review. Employees can view their own requests.
+    match /overtime_requests/{requestId} {
+      allow read: if isManager() || isMatchingEmployee(resource.data.employeeId);
+      allow create: if ((isManager()) || (
+          isAuthenticated() &&
+          isMatchingEmployee(request.resource.data.employeeId) &&
+          request.resource.data.status == 'pending' &&
+          !('approvedBy' in request.resource.data) &&
+          !('approvalDate' in request.resource.data) &&
+          request.resource.data.payrollIncluded == false
+        )) &&
+        isValidOvertimeRequest(request.resource.data);
+      allow update: if ((isAdmin()) || (
+          isManager() &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status == 'pending' &&
+          areImmutableFieldsUnchanged([
+            'status', 'approvedBy', 'approvalDate', 'approvalNotes',
+            'payrollIncluded', 'payrollId', 'calculatedOvertimeWage',
+            'hourlyWage', 'overtimeMultiplier'
+          ])
+        )) &&
+        isValidOvertimeRequest(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'shiftId', 'employeeId', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 7. Payroll Collection
+    // Strictly restricted to Admin (read/write). Employee can ONLY read their own records.
+    // Managers have NO access to payroll records.
+    match /payroll/{payrollId} {
+      allow read: if isAdmin() || (!isManager() && isMatchingEmployee(resource.data.employeeId));
+      allow create: if isAdmin() && isValidPayroll(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidPayroll(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'employeeId', 'employeeCode', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 8. Payments Collection
+    // Immutable financial ledger! Only Admins and verified backend Cloud Functions can write.
+    // Deletions are forbidden. Employees can only read their own payments.
+    match /payments/{transactionId} {
+      allow read: if isAdmin() || (!isManager() && isMatchingEmployee(resource.data.employeeId));
+      allow create: if isAdmin() && isValidPayment(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidPayment(request.resource.data) &&
+        areImmutableFieldsUnchanged([
+          'id', 'payrollId', 'employeeId', 'employeeCode',
+          'amount', 'currency', 'idempotencyKey', 'initiatedBy', 'initiatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // 9. Notifications Collection
+    // Users can read their own notifications (userId == auth.uid || userId == 'all') and update read status.
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.userId == 'all' ||
+        isMatchingEmployee(resource.data.userId) ||
+        isAdmin()
+      );
+      allow create: if (isManager() || (
+          isAuthenticated() && (
+            request.resource.data.userId == request.auth.uid ||
+            isMatchingEmployee(request.resource.data.userId)
+          )
+        )) &&
+        isValidNotification(request.resource.data);
+      allow update: if ((isAdmin()) || (
+          isAuthenticated() &&
+          (
+            resource.data.userId == request.auth.uid ||
+            resource.data.userId == 'all' ||
+            isMatchingEmployee(resource.data.userId)
+          ) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        )) &&
+        isValidNotification(request.resource.data) &&
+        areImmutableFieldsUnchanged(['id', 'userId', 'title', 'message', 'type', 'createdAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 10. Audit Logs Collection
+    // Append-only compliance log. Read allowed for Admins. Updates and deletes strictly forbidden.
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isValidAuditLog(request.resource.data);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Default Deny Rule for all unhandled collections and paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
