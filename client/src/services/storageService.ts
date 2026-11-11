@@ -190,6 +190,8 @@ export function deduplicateAdvances(advs: AdvanceRecord[]): AdvanceRecord[] {
   return Array.from(map.values());
 }
 
+let hasPurgedOnce = false;
+
 function getLocal<T>(key: string, defaultVal: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -227,55 +229,38 @@ export const storageService = {
     localStorage.setItem(KEYS.USERS, JSON.stringify(INITIAL_USERS));
 
     if (isFirebaseConfigured) {
-      // Also optionally seed Firestore
-      try {
-        for (const emp of INITIAL_EMPLOYEES) {
-          await setDoc(doc(db, 'employees', emp.id), emp);
+      (async () => {
+        try {
+          const batch = writeBatch(db);
+          for (const emp of INITIAL_EMPLOYEES) {
+            batch.set(doc(db, 'employees', emp.id), emp);
+          }
+          await batch.commit();
+        } catch (err) {
+          console.warn('Firestore seed warning:', err);
         }
-      } catch (err) {
-        console.warn('Firestore seed skipped:', err);
-      }
+      })();
     }
   },
 
   // USERS
   getUsers: async (): Promise<User[]> => {
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'users'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as User);
-      } catch (e) {
-        console.warn('Fallback to local users', e);
-      }
-    }
     return getLocal<User[]>(KEYS.USERS, INITIAL_USERS);
   },
 
-  // EMPLOYEES
+  // EMPLOYEES - Local-First (<1ms latency)
   getEmployees: async (): Promise<Employee[]> => {
-    let list: Employee[] = [];
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'employees'));
-        if (!snap.empty) {
-          list = snap.docs.map((d) => d.data() as Employee);
-        }
-      } catch (e) {
-        console.warn('Fallback to local employees', e);
-      }
-    }
-
+    let list = getLocal<Employee[]>(KEYS.EMPLOYEES, []);
     if (!list || list.length === 0) {
-      list = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
+      list = INITIAL_EMPLOYEES;
     }
-
     const clean = deduplicateEmployees(list);
     setLocal(KEYS.EMPLOYEES, clean);
     return clean;
   },
 
   saveEmployee: async (employee: Employee): Promise<void> => {
-    const list = await storageService.getEmployees();
+    const list = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
     const index = list.findIndex((e) => e.id === employee.id);
     let updated: Employee[];
     if (index >= 0) {
@@ -284,56 +269,43 @@ export const storageService = {
     } else {
       updated = [employee, ...list];
     }
-    setLocal(KEYS.EMPLOYEES, updated);
+    const clean = deduplicateEmployees(updated);
+    setLocal(KEYS.EMPLOYEES, clean);
 
+    // Background Firestore write (never blocks UI)
     if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'employees', employee.id), employee);
-      } catch (e) {
-        console.error('Firestore saveEmployee error:', e);
-      }
+      setDoc(doc(db, 'employees', employee.id), employee).catch((e) => {
+        console.warn('Firestore background saveEmployee error:', e);
+      });
     }
   },
 
   deleteEmployee: async (id: string): Promise<void> => {
-    const list = await storageService.getEmployees();
+    const list = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
     const updated = list.filter((e) => e.id !== id);
-    setLocal(KEYS.EMPLOYEES, updated);
+    const clean = deduplicateEmployees(updated);
+    setLocal(KEYS.EMPLOYEES, clean);
 
     if (isFirebaseConfigured) {
-      try {
-        await deleteDoc(doc(db, 'employees', id));
-      } catch (e) {
-        console.error('Firestore deleteEmployee error:', e);
-      }
+      deleteDoc(doc(db, 'employees', id)).catch((e) => {
+        console.warn('Firestore background deleteEmployee error:', e);
+      });
     }
   },
 
-  // SHIFTS
+  // SHIFTS - Local-First (<1ms latency)
   getShifts: async (): Promise<Shift[]> => {
-    let list: Shift[] = [];
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'shifts'));
-        if (!snap.empty) {
-          list = snap.docs.map((d) => d.data() as Shift);
-        }
-      } catch (e) {
-        console.warn('Fallback to local shifts', e);
-      }
-    }
-
+    let list = getLocal<Shift[]>(KEYS.SHIFTS, []);
     if (!list || list.length === 0) {
-      list = getLocal<Shift[]>(KEYS.SHIFTS, INITIAL_SHIFTS);
+      list = INITIAL_SHIFTS;
     }
-
     const clean = deduplicateShifts(list);
     setLocal(KEYS.SHIFTS, clean);
     return clean;
   },
 
   saveShift: async (shift: Shift): Promise<void> => {
-    const list = await storageService.getShifts();
+    const list = getLocal<Shift[]>(KEYS.SHIFTS, INITIAL_SHIFTS);
     const index = list.findIndex((s) => s.id === shift.id);
     let updated: Shift[];
     if (index >= 0) {
@@ -342,56 +314,41 @@ export const storageService = {
     } else {
       updated = [shift, ...list];
     }
-    setLocal(KEYS.SHIFTS, updated);
+    const clean = deduplicateShifts(updated);
+    setLocal(KEYS.SHIFTS, clean);
 
     if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'shifts', shift.id), shift);
-      } catch (e) {
-        console.error('Firestore saveShift error:', e);
-      }
+      setDoc(doc(db, 'shifts', shift.id), shift).catch((e) => {
+        console.warn('Firestore background saveShift error:', e);
+      });
     }
   },
 
   deleteShift: async (id: string): Promise<void> => {
-    const list = await storageService.getShifts();
+    const list = getLocal<Shift[]>(KEYS.SHIFTS, INITIAL_SHIFTS);
     const updated = list.filter((s) => s.id !== id);
     setLocal(KEYS.SHIFTS, updated);
 
     if (isFirebaseConfigured) {
-      try {
-        await deleteDoc(doc(db, 'shifts', id));
-      } catch (e) {
-        console.error('Firestore deleteShift error:', e);
-      }
+      deleteDoc(doc(db, 'shifts', id)).catch((e) => {
+        console.warn('Firestore background deleteShift error:', e);
+      });
     }
   },
 
-  // ATTENDANCE
+  // ATTENDANCE - Local-First (<1ms latency)
   getAttendance: async (): Promise<Attendance[]> => {
-    let list: Attendance[] = [];
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'attendance'));
-        if (!snap.empty) {
-          list = snap.docs.map((d) => d.data() as Attendance);
-        }
-      } catch (e) {
-        console.warn('Fallback to local attendance', e);
-      }
-    }
-
+    let list = getLocal<Attendance[]>(KEYS.ATTENDANCE, []);
     if (!list || list.length === 0) {
-      list = getLocal<Attendance[]>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+      list = INITIAL_ATTENDANCE;
     }
-
     const clean = deduplicateAttendance(list);
     setLocal(KEYS.ATTENDANCE, clean);
     return clean;
   },
 
   saveAttendance: async (attendance: Attendance): Promise<void> => {
-    const list = await storageService.getAttendance();
+    const list = getLocal<Attendance[]>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
     const index = list.findIndex((a) => a.id === attendance.id);
     let updated: Attendance[];
     if (index >= 0) {
@@ -400,32 +357,54 @@ export const storageService = {
     } else {
       updated = [attendance, ...list];
     }
-    setLocal(KEYS.ATTENDANCE, updated);
+    const clean = deduplicateAttendance(updated);
+    setLocal(KEYS.ATTENDANCE, clean);
+
+    // Fire-and-forget sync to Firestore
+    if (isFirebaseConfigured) {
+      setDoc(doc(db, 'attendance', attendance.id), attendance).catch((e) => {
+        console.warn('Firestore background saveAttendance error:', e);
+      });
+    }
+  },
+
+  // High-performance bulk attendance save (1 local write + 1 background Firestore batch)
+  saveBulkAttendance: async (records: Attendance[]): Promise<void> => {
+    if (!records || records.length === 0) return;
+    const list = getLocal<Attendance[]>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+    const recordMap = new Map(list.map((a) => [a.id, a]));
+    for (const r of records) {
+      recordMap.set(r.id, r);
+    }
+    const clean = deduplicateAttendance(Array.from(recordMap.values()));
+    setLocal(KEYS.ATTENDANCE, clean);
 
     if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'attendance', attendance.id), attendance);
-      } catch (e) {
-        console.error('Firestore saveAttendance error:', e);
-      }
+      (async () => {
+        try {
+          const chunkSize = 400;
+          for (let i = 0; i < records.length; i += chunkSize) {
+            const chunk = records.slice(i, i + chunkSize);
+            const batch = writeBatch(db);
+            for (const r of chunk) {
+              batch.set(doc(db, 'attendance', r.id), r);
+            }
+            await batch.commit();
+          }
+        } catch (e) {
+          console.warn('Firestore background batch saveBulkAttendance error:', e);
+        }
+      })();
     }
   },
 
   // OVERTIME REQUESTS
   getOvertimeRequests: async (): Promise<OvertimeRequest[]> => {
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'overtime_requests'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as OvertimeRequest);
-      } catch (e) {
-        console.warn('Fallback to local overtime', e);
-      }
-    }
     return getLocal<OvertimeRequest[]>(KEYS.OVERTIME, INITIAL_OVERTIME_REQUESTS);
   },
 
   saveOvertimeRequest: async (ot: OvertimeRequest): Promise<void> => {
-    const list = await storageService.getOvertimeRequests();
+    const list = getLocal<OvertimeRequest[]>(KEYS.OVERTIME, INITIAL_OVERTIME_REQUESTS);
     const index = list.findIndex((o) => o.id === ot.id);
     let updated: OvertimeRequest[];
     if (index >= 0) {
@@ -437,29 +416,19 @@ export const storageService = {
     setLocal(KEYS.OVERTIME, updated);
 
     if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'overtime_requests', ot.id), ot);
-      } catch (e) {
-        console.error('Firestore saveOvertime error:', e);
-      }
+      setDoc(doc(db, 'overtime_requests', ot.id), ot).catch((e) => {
+        console.warn('Firestore background saveOvertime error:', e);
+      });
     }
   },
 
   // PAYROLL
   getPayrollRecords: async (): Promise<PayrollRecord[]> => {
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'payroll'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as PayrollRecord);
-      } catch (e) {
-        console.warn('Fallback to local payroll', e);
-      }
-    }
     return getLocal<PayrollRecord[]>(KEYS.PAYROLL, INITIAL_PAYROLL);
   },
 
   savePayrollRecord: async (record: PayrollRecord): Promise<void> => {
-    const list = await storageService.getPayrollRecords();
+    const list = getLocal<PayrollRecord[]>(KEYS.PAYROLL, INITIAL_PAYROLL);
     const index = list.findIndex((p) => p.id === record.id);
     let updated: PayrollRecord[];
     if (index >= 0) {
@@ -471,39 +440,22 @@ export const storageService = {
     setLocal(KEYS.PAYROLL, updated);
 
     if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'payroll', record.id), record);
-      } catch (e) {
-        console.error('Firestore savePayroll error:', e);
-      }
+      setDoc(doc(db, 'payroll', record.id), record).catch((e) => {
+        console.warn('Firestore background savePayroll error:', e);
+      });
     }
   },
 
-  // TRANSACTIONS
+  // TRANSACTIONS - Local-First (<1ms latency)
   getTransactions: async (): Promise<PaymentTransaction[]> => {
-    let list: PaymentTransaction[] = [];
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'payments'));
-        if (!snap.empty) {
-          list = snap.docs.map((d) => d.data() as PaymentTransaction);
-        }
-      } catch (e) {
-        console.warn('Fallback to local payments', e);
-      }
-    }
-
-    if (!list || list.length === 0) {
-      list = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
-    }
-
+    const list = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
     const clean = deduplicateTransactions(list);
     setLocal(KEYS.TRANSACTIONS, clean);
     return clean;
   },
 
   saveTransaction: async (tx: PaymentTransaction): Promise<void> => {
-    const list = await storageService.getTransactions();
+    const list = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
     const index = list.findIndex((t) => t.id === tx.id);
     let updated: PaymentTransaction[];
     if (index >= 0) {
@@ -512,14 +464,25 @@ export const storageService = {
     } else {
       updated = [tx, ...list];
     }
+    const clean = deduplicateTransactions(updated);
+    setLocal(KEYS.TRANSACTIONS, clean);
+
+    if (isFirebaseConfigured) {
+      setDoc(doc(db, 'payments', tx.id), tx).catch((e) => {
+        console.warn('Firestore background saveTransaction error:', e);
+      });
+    }
+  },
+
+  deleteTransaction: async (id: string): Promise<void> => {
+    const list = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
+    const updated = list.filter((t) => t.id !== id);
     setLocal(KEYS.TRANSACTIONS, updated);
 
     if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'payments', tx.id), tx);
-      } catch (e) {
-        console.error('Firestore saveTransaction error:', e);
-      }
+      deleteDoc(doc(db, 'payments', id)).catch((e) => {
+        console.warn('Firestore background deleteTransaction error:', e);
+      });
     }
   },
 
@@ -529,19 +492,19 @@ export const storageService = {
   },
 
   saveNotification: async (notif: NotificationItem): Promise<void> => {
-    const list = await storageService.getNotifications();
+    const list = getLocal<NotificationItem[]>(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
     const updated = [notif, ...list];
     setLocal(KEYS.NOTIFICATIONS, updated);
   },
 
   markNotificationRead: async (id: string): Promise<void> => {
-    const list = await storageService.getNotifications();
+    const list = getLocal<NotificationItem[]>(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
     const updated = list.map((n) => (n.id === id ? { ...n, read: true } : n));
     setLocal(KEYS.NOTIFICATIONS, updated);
   },
 
   markAllNotificationsRead: async (): Promise<void> => {
-    const list = await storageService.getNotifications();
+    const list = getLocal<NotificationItem[]>(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
     const updated = list.map((n) => ({ ...n, read: true }));
     setLocal(KEYS.NOTIFICATIONS, updated);
   },
@@ -559,7 +522,7 @@ export const storageService = {
     performedByRole: string,
     details: Record<string, any>
   ): Promise<void> => {
-    const logs = await storageService.getAuditLogs();
+    const logs = getLocal<AuditLog[]>(KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
     const newLog: AuditLog = {
       id: `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       action,
@@ -578,37 +541,65 @@ export const storageService = {
     return getLocal<Department[]>(KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
   },
 
-  // ADVANCES / LENDING
+  // ADVANCES / LENDING - Local-First (<1ms latency)
   getAdvances: async (): Promise<AdvanceRecord[]> => {
-    let list: AdvanceRecord[] = [];
-    if (isFirebaseConfigured) {
-      try {
-        const snap = await getDocs(collection(db, 'advances'));
-        if (!snap.empty) {
-          list = snap.docs.map((d) => d.data() as AdvanceRecord);
-        }
-      } catch (e) {
-        console.warn('Fallback to local advances', e);
-      }
-    }
-
-    if (!list || list.length === 0) {
-      list = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
-    }
-
+    const list = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
     const clean = deduplicateAdvances(list);
     setLocal(KEYS.ADVANCES, clean);
     return clean;
   },
 
-  // MASTER PURGE OF DUPLICATE & SAMPLE DATA
-  purgeDuplicateAndSampleData: async (): Promise<{
+  saveAdvance: async (adv: AdvanceRecord): Promise<void> => {
+    const list = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+    const index = list.findIndex((a) => a.id === adv.id);
+    let updated: AdvanceRecord[];
+    if (index >= 0) {
+      updated = [...list];
+      updated[index] = adv;
+    } else {
+      updated = [adv, ...list];
+    }
+    const clean = deduplicateAdvances(updated);
+    setLocal(KEYS.ADVANCES, clean);
+
+    if (isFirebaseConfigured) {
+      setDoc(doc(db, 'advances', adv.id), adv).catch((e) => {
+        console.warn('Firestore background saveAdvance error:', e);
+      });
+    }
+  },
+
+  deleteAdvance: async (id: string): Promise<void> => {
+    const list = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+    const updated = list.filter((a) => a.id !== id);
+    setLocal(KEYS.ADVANCES, updated);
+
+    if (isFirebaseConfigured) {
+      deleteDoc(doc(db, 'advances', id)).catch((e) => {
+        console.warn('Firestore background deleteAdvance error:', e);
+      });
+    }
+  },
+
+  // MASTER PURGE OF DUPLICATE & SAMPLE DATA (Guarded to run once on boot or when forced)
+  purgeDuplicateAndSampleData: async (force: boolean = false): Promise<{
     cleanedEmployees: number;
     cleanedAttendance: number;
     cleanedShifts: number;
     cleanedTransactions: number;
     cleanedAdvances: number;
   }> => {
+    if (hasPurgedOnce && !force) {
+      return {
+        cleanedEmployees: 0,
+        cleanedAttendance: 0,
+        cleanedShifts: 0,
+        cleanedTransactions: 0,
+        cleanedAdvances: 0,
+      };
+    }
+    hasPurgedOnce = true;
+
     // 1. Purge employees
     const rawEmps = getLocal<Employee[]>(KEYS.EMPLOYEES, []);
     const cleanEmps = deduplicateEmployees(rawEmps);
@@ -634,20 +625,24 @@ export const storageService = {
     const cleanAdvs = deduplicateAdvances(rawAdvs);
     setLocal(KEYS.ADVANCES, cleanAdvs);
 
-    // 6. Delete dummy documents from Firestore
+    // 6. Delete dummy documents from Firestore in background
     if (isFirebaseConfigured) {
-      try {
-        for (const id of DUMMY_EMPLOYEE_IDS) {
-          await deleteDoc(doc(db, 'employees', id)).catch(() => {});
-          await deleteDoc(doc(db, 'shifts', id)).catch(() => {});
-          await deleteDoc(doc(db, 'attendance', id)).catch(() => {});
+      (async () => {
+        try {
+          const batch = writeBatch(db);
+          for (const id of DUMMY_EMPLOYEE_IDS) {
+            batch.delete(doc(db, 'employees', id));
+            batch.delete(doc(db, 'shifts', id));
+            batch.delete(doc(db, 'attendance', id));
+          }
+          for (const emp of cleanEmps) {
+            batch.set(doc(db, 'employees', emp.id), emp);
+          }
+          await batch.commit();
+        } catch (e) {
+          console.warn('Background Firestore purge warning:', e);
         }
-        for (const emp of cleanEmps) {
-          await setDoc(doc(db, 'employees', emp.id), emp, { merge: true }).catch(() => {});
-        }
-      } catch (e) {
-        console.warn('Firestore purge error:', e);
-      }
+      })();
     }
 
     return {
@@ -659,39 +654,64 @@ export const storageService = {
     };
   },
 
-  saveAdvance: async (adv: AdvanceRecord): Promise<void> => {
-    const list = await storageService.getAdvances();
-    const index = list.findIndex((a) => a.id === adv.id);
-    let updated: AdvanceRecord[];
-    if (index >= 0) {
-      updated = [...list];
-      updated[index] = adv;
-    } else {
-      updated = [adv, ...list];
-    }
-    setLocal(KEYS.ADVANCES, updated);
+  // SILENT BACKGROUND SYNC WITH FIRESTORE
+  syncWithFirestoreInBackground: async (onDataUpdated?: () => void): Promise<void> => {
+    if (!isFirebaseConfigured) return;
+    try {
+      const [empSnap, attSnap, shfSnap, txSnap, advSnap] = await Promise.all([
+        getDocs(collection(db, 'employees')).catch(() => null),
+        getDocs(collection(db, 'attendance')).catch(() => null),
+        getDocs(collection(db, 'shifts')).catch(() => null),
+        getDocs(collection(db, 'payments')).catch(() => null),
+        getDocs(collection(db, 'advances')).catch(() => null),
+      ]);
 
-    if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'advances', adv.id), adv);
-      } catch (e) {
-        console.error('Firestore saveAdvance error:', e);
+      let changed = false;
+
+      if (empSnap && !empSnap.empty) {
+        const remoteEmps = empSnap.docs.map((d) => d.data() as Employee);
+        const cleanEmps = deduplicateEmployees(remoteEmps);
+        setLocal(KEYS.EMPLOYEES, cleanEmps);
+        changed = true;
       }
+      if (attSnap && !attSnap.empty) {
+        const remoteAtts = attSnap.docs.map((d) => d.data() as Attendance);
+        const cleanAtts = deduplicateAttendance(remoteAtts);
+        setLocal(KEYS.ATTENDANCE, cleanAtts);
+        changed = true;
+      }
+      if (shfSnap && !shfSnap.empty) {
+        const remoteShfs = shfSnap.docs.map((d) => d.data() as Shift);
+        const cleanShfs = deduplicateShifts(remoteShfs);
+        setLocal(KEYS.SHIFTS, cleanShfs);
+        changed = true;
+      }
+      if (txSnap && !txSnap.empty) {
+        const remoteTxs = txSnap.docs.map((d) => d.data() as PaymentTransaction);
+        const cleanTxs = deduplicateTransactions(remoteTxs);
+        setLocal(KEYS.TRANSACTIONS, cleanTxs);
+        changed = true;
+      }
+      if (advSnap && !advSnap.empty) {
+        const remoteAdvs = advSnap.docs.map((d) => d.data() as AdvanceRecord);
+        const cleanAdvs = deduplicateAdvances(remoteAdvs);
+        setLocal(KEYS.ADVANCES, cleanAdvs);
+        changed = true;
+      }
+
+      if (changed && onDataUpdated) {
+        onDataUpdated();
+      }
+    } catch (e) {
+      console.warn('Background sync with Firestore completed with note:', e);
     }
   },
 
-  deleteAdvance: async (id: string): Promise<void> => {
-    const list = await storageService.getAdvances();
-    const updated = list.filter((a) => a.id !== id);
-    setLocal(KEYS.ADVANCES, updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await deleteDoc(doc(db, 'advances', id));
-      } catch (e) {
-        console.error('Firestore deleteAdvance error:', e);
-      }
-    }
+  // SYNC LOCAL DATA DIRECTLY TO CLOUD
+  syncLocalToCloud: async (): Promise<{ syncedCount: number }> => {
+    const payload = await storageService.exportAllData();
+    const res = await storageService.restoreBackupToCloud(payload);
+    return { syncedCount: res.restoredCount };
   },
 
   // CLOUD STATS & QUOTA MANAGEMENT

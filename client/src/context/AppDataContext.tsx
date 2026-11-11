@@ -136,8 +136,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const loadData = useCallback(async () => {
     try {
-      // Auto-purge any stale dummy sample data and remove duplicate records on load
-      await storageService.purgeDuplicateAndSampleData();
+      // 1. Initial fast local read (<1ms)
+      await storageService.purgeDuplicateAndSampleData(false);
 
       const [
         emps,
@@ -181,7 +181,14 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   useEffect(() => {
+    // Immediate 0ms local data load
     loadData();
+
+    // Background silent Firestore synchronization
+    storageService.syncWithFirestoreInBackground(() => {
+      // If remote has newer data, update state quietly without loader flash
+      loadData();
+    });
   }, [loadData]);
 
   // EMPLOYEES
@@ -196,6 +203,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updatedAt: new Date().toISOString(),
     };
 
+    // Optimistic UI update (<1ms)
+    setEmployees((prev) => [newEmployee, ...prev]);
+
     await storageService.saveEmployee(newEmployee);
     await storageService.logAction(
       'EMPLOYEE_CREATED',
@@ -205,11 +215,13 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.role || 'admin',
       { name: newEmployee.fullName, department: newEmployee.department }
     );
-    await loadData();
     return newEmployee;
   };
 
   const updateEmployee = async (emp: Employee) => {
+    // Optimistic UI update
+    setEmployees((prev) => prev.map((e) => (e.id === emp.id ? emp : e)));
+
     await storageService.saveEmployee(emp);
     await storageService.logAction(
       'EMPLOYEE_UPDATED',
@@ -219,13 +231,16 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.role || 'admin',
       { name: emp.fullName, status: emp.status }
     );
-    await loadData();
   };
 
   const deactivateEmployee = async (id: string) => {
     const emp = employees.find((e) => e.id === id);
     if (!emp) return;
     const updated = { ...emp, status: 'inactive' as const, updatedAt: new Date().toISOString() };
+
+    // Optimistic UI update
+    setEmployees((prev) => prev.map((e) => (e.id === id ? updated : e)));
+
     await storageService.saveEmployee(updated);
     await storageService.logAction(
       'EMPLOYEE_DEACTIVATED',
@@ -235,10 +250,12 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.role || 'admin',
       { name: emp.fullName }
     );
-    await loadData();
   };
 
   const deleteEmployee = async (id: string) => {
+    // Optimistic UI update
+    setEmployees((prev) => prev.filter((e) => e.id !== id));
+
     await storageService.deleteEmployee(id);
     await storageService.logAction(
       'EMPLOYEE_DELETED',
@@ -248,7 +265,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.role || 'admin',
       { id }
     );
-    await loadData();
   };
 
   // LENDING / ADVANCE ACTIONS
@@ -284,6 +300,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       advanceBalance: newBal,
     };
 
+    // Optimistic UI update
+    setAdvances((prev) => [advRecord, ...prev]);
+    setEmployees((prev) => prev.map((e) => (e.id === targetEmp.id ? updatedEmp : e)));
+
     await storageService.saveAdvance(advRecord);
     await storageService.saveEmployee(updatedEmp);
     await storageService.logAction(
@@ -300,7 +320,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     );
 
-    await loadData();
     return advRecord;
   };
 
@@ -337,6 +356,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       advanceBalance: newBal,
     };
 
+    // Optimistic UI update
+    setAdvances((prev) => [advRecord, ...prev]);
+    setEmployees((prev) => prev.map((e) => (e.id === targetEmp.id ? updatedEmp : e)));
+
     await storageService.saveAdvance(advRecord);
     await storageService.saveEmployee(updatedEmp);
     await storageService.logAction(
@@ -353,13 +376,12 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     );
 
-    await loadData();
     return advRecord;
   };
 
   const deleteAdvance = async (id: string) => {
+    setAdvances((prev) => prev.filter((a) => a.id !== id));
     await storageService.deleteAdvance(id);
-    await loadData();
   };
 
   // SHIFTS
@@ -696,15 +718,28 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: existing?.createdAt || new Date().toISOString(),
     };
 
+    // Optimistic UI update: React re-renders in 0ms!
+    setAttendance((prev) => {
+      const idx = prev.findIndex((a) => a.id === record.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = record;
+        return next;
+      }
+      return [record, ...prev];
+    });
+
+    // Save to local cache (<1ms) and fire-and-forget sync to Firestore
     await storageService.saveAttendance(record);
-    await loadData();
     return record;
   };
 
   const markAllAttendance = async (date: string, status: 'present' | 'absent') => {
+    const shiftsCount = status === 'present' ? 1 : 0;
+    const newRecords: Attendance[] = [];
+
     for (const emp of employees) {
       const shiftRate = emp.shiftRate || emp.hourlyWage * 8 || 800;
-      const shiftsCount = status === 'present' ? 1 : 0;
       const existing = attendance.find((a) => a.employeeId === emp.id && a.date === date);
 
       const record: Attendance = {
@@ -728,9 +763,20 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         paidTransactionId: existing?.paidTransactionId,
         createdAt: existing?.createdAt || new Date().toISOString(),
       };
-      await storageService.saveAttendance(record);
+      newRecords.push(record);
     }
-    await loadData();
+
+    // Optimistic UI update for all employees instantly
+    setAttendance((prev) => {
+      const map = new Map(prev.map((a) => [a.id, a]));
+      for (const r of newRecords) {
+        map.set(r.id, r);
+      }
+      return Array.from(map.values());
+    });
+
+    // Bulk save in 1 local step + 1 background Firestore batch
+    await storageService.saveBulkAttendance(newRecords);
   };
 
   const settleWeeklyAttendance = async (params: {
@@ -740,20 +786,38 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     transactionId: string;
     advanceDeducted?: number;
   }) => {
+    // Optimistic UI update
+    setAttendance((prev) =>
+      prev.map((a) => {
+        if (
+          a.employeeId === params.employeeId &&
+          a.date >= params.startDate &&
+          a.date <= params.endDate
+        ) {
+          return {
+            ...a,
+            isPaid: true,
+            paidAt: new Date().toISOString(),
+            paidTransactionId: params.transactionId,
+          };
+        }
+        return a;
+      })
+    );
+
     const records = attendance.filter(
       (a) =>
         a.employeeId === params.employeeId &&
         a.date >= params.startDate &&
         a.date <= params.endDate
     );
-    for (const a of records) {
-      await storageService.saveAttendance({
-        ...a,
-        isPaid: true,
-        paidAt: new Date().toISOString(),
-        paidTransactionId: params.transactionId,
-      });
-    }
+    const updatedAtts: Attendance[] = records.map((a) => ({
+      ...a,
+      isPaid: true,
+      paidAt: new Date().toISOString(),
+      paidTransactionId: params.transactionId,
+    }));
+    await storageService.saveBulkAttendance(updatedAtts);
 
     if (params.advanceDeducted && params.advanceDeducted > 0) {
       const targetEmp = employees.find((e) => e.id === params.employeeId);
@@ -762,10 +826,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const currentBal = targetEmp.advanceBalance || 0;
         const newBal = Math.max(0, Math.round((currentBal - cleanDeducted) * 100) / 100);
 
-        await storageService.saveEmployee({
+        const updatedTargetEmp: Employee = {
           ...targetEmp,
           advanceBalance: newBal,
-        });
+        };
 
         const advRecord: AdvanceRecord = {
           id: `ADV-DED-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -779,11 +843,15 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
           referenceId: params.transactionId,
           createdAt: new Date().toISOString(),
         };
+
+        // Optimistic UI updates
+        setEmployees((prev) => prev.map((e) => (e.id === targetEmp.id ? updatedTargetEmp : e)));
+        setAdvances((prev) => [advRecord, ...prev]);
+
+        await storageService.saveEmployee(updatedTargetEmp);
         await storageService.saveAdvance(advRecord);
       }
     }
-
-    await loadData();
   };
 
   // OVERTIME
@@ -1048,6 +1116,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         : `${data.shiftsCount} shift${data.shiftsCount > 1 ? 's' : ''} (₹${data.shiftRate}) + ${data.overtimeHours}h OT (₹${data.overtimeRate}/hr)`,
     };
 
+    // Optimistic UI update: Instant UI addition
+    setTransactions((prev) => [transaction, ...prev]);
+
     await storageService.saveTransaction(transaction);
 
     // If advance was deducted, record ledger entry and update employee's remaining advance
@@ -1064,12 +1135,18 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         referenceId: txId,
         createdAt: new Date().toISOString(),
       };
-      await storageService.saveAdvance(advRecord);
 
-      await storageService.saveEmployee({
+      const updatedEmp: Employee = {
         ...data.employee,
         advanceBalance: remainingAdvanceBalance,
-      });
+      };
+
+      // Optimistic updates
+      setAdvances((prev) => [advRecord, ...prev]);
+      setEmployees((prev) => prev.map((e) => (e.id === data.employee.id ? updatedEmp : e)));
+
+      await storageService.saveAdvance(advRecord);
+      await storageService.saveEmployee(updatedEmp);
     }
 
     await storageService.logAction(
@@ -1088,26 +1165,23 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     );
 
-    await loadData();
     return transaction;
   };
 
   const deleteTransaction = async (id: string) => {
-    const list = await storageService.getTransactions();
-    const filtered = list.filter((t) => t.id !== id);
-    localStorage.setItem('workpay_transactions', JSON.stringify(filtered));
-    await loadData();
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+    await storageService.deleteTransaction(id);
   };
 
   // NOTIFICATIONS
   const markNotificationRead = async (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     await storageService.markNotificationRead(id);
-    await loadData();
   };
 
   const markAllNotificationsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     await storageService.markAllNotificationsRead();
-    await loadData();
   };
 
   const resetToSeedData = async () => {
@@ -1116,7 +1190,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const cleanDuplicateData = async () => {
-    const stats = await storageService.purgeDuplicateAndSampleData();
+    const stats = await storageService.purgeDuplicateAndSampleData(true);
     await loadData();
     return stats;
   };

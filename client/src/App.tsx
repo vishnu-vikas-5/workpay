@@ -14,6 +14,7 @@ import { PaymentHistorySection } from './components/common/PaymentHistorySection
 import { EmployeeModal } from './components/modals/EmployeeModal';
 import { ManageEmployeesModal } from './components/modals/ManageEmployeesModal';
 import { Login } from './pages/Login';
+import { DownloadAppPage } from './pages/DownloadAppPage';
 import { Employee } from './types';
 import { useAppData } from './context/AppDataContext';
 import { useAuth } from './context/AuthContext';
@@ -25,6 +26,18 @@ export const App: React.FC = () => {
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
+
+  // 0. Standalone APK Download Page - Independent distribution page, does not link back to website
+  const isDownloadRoute =
+    window.location.pathname === '/download' ||
+    window.location.pathname === '/download-apk' ||
+    window.location.pathname.endsWith('/download.html') ||
+    window.location.search.includes('download') ||
+    window.location.hash.includes('download');
+
+  if (isDownloadRoute) {
+    return <DownloadAppPage />;
+  }
 
   // 1. Initial Authentication Loading State
   if (authLoading) {
