@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Zap,
   Users,
   CalendarDays,
   Clock,
@@ -40,6 +41,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const navItems = [
+    // Quick Pay directly accessible to all
+    { name: '⚡ Quick Pay & Calc', path: '/quick-pay', icon: Zap },
     // Admin & Manager common
     ...(role === 'admin'
       ? [

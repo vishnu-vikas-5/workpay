@@ -31,6 +31,7 @@ import {
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { StatCard } from '../components/common/StatCard';
+import { QuickPayConsole } from '../components/common/QuickPayConsole';
 import { formatINR, formatHours, getPaymentStatusBadge, getShiftStatusBadge } from '../utils/utils';
 
 interface DashboardProps {
@@ -147,6 +148,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* Quick Pay: Shift & Overtime Calculator & Direct UPI Payment Console */}
+      <QuickPayConsole />
 
       {/* Summary KPI Cards Grid (Section 4) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

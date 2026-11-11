@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { Dashboard } from './pages/Dashboard';
+import { QuickPayPage } from './pages/QuickPayPage';
 import { Employees } from './pages/Employees';
 import { ShiftCalendar } from './pages/ShiftCalendar';
 import { Attendance } from './pages/Attendance';
@@ -47,7 +48,7 @@ export const App: React.FC = () => {
   // Role Protection: Ensure employee stays within worker pages
   useEffect(() => {
     if (role === 'employee') {
-      const allowed = ['/employee-dashboard', '/shifts', '/attendance', '/employee-payments', '/notifications'];
+      const allowed = ['/employee-dashboard', '/shifts', '/attendance', '/employee-payments', '/notifications', '/quick-pay'];
       if (!allowed.includes(currentPath)) {
         navigate('/employee-dashboard');
       }
@@ -56,15 +57,15 @@ export const App: React.FC = () => {
     }
   }, [role, currentPath]);
 
-  if (!isAuthenticated) {
-    return <Login onSuccess={() => navigate('/')} />;
-  }
-
   // Render Page Content
   const renderContent = () => {
     switch (currentPath) {
       case '/':
         return <Dashboard onNavigate={navigate} />;
+      case '/quick-pay':
+        return <QuickPayPage />;
+      case '/login':
+        return <Login onSuccess={() => navigate('/')} />;
       case '/employees':
         return <Employees />;
       case '/shifts':

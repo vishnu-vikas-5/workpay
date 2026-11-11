@@ -48,7 +48,27 @@ export function maskUpiId(upiId?: string): string {
 /**
  * Formats decimal hours into "Xh Ym"
  */
+export function formatDateTime(isoString?: string): string {
+  if (!isoString) return '—';
+  try {
+    return new Date(isoString).toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch (e) {
+    return isoString;
+  }
+}
+
+export function formatTimestamp(isoString?: string): string {
+  return formatDateTime(isoString);
+}
+
 export function formatHours(hours: number): string {
+
   if (hours <= 0 || isNaN(hours)) return '0h 00m';
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Menu,
+  Zap,
   Bell,
   Search,
   CheckCircle2,
@@ -104,6 +105,15 @@ export const Topbar: React.FC<TopbarProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Quick Pay CTA Button */}
+        <button
+          onClick={() => onNavigate('/quick-pay')}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-xs transition-all"
+        >
+          <Zap className="w-3.5 h-3.5 fill-white" />
+          <span className="hidden sm:inline">⚡ Quick Pay</span>
+        </button>
 
         {/* Notifications Bell */}
         <div className="relative" ref={notifRef}>

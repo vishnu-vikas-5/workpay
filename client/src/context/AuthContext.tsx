@@ -76,10 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { email: user.email }
       );
     }
-    setUser(null);
+    // Default to admin so no login wall blocks the user
+    setUser(INITIAL_USERS[0]);
   };
 
-  const role = user?.role || 'admin';
+  const currentUser = user || INITIAL_USERS[0];
+  const role = currentUser.role || 'admin';
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const isEmployee = role === 'employee';
@@ -87,9 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: currentUser,
         role,
-        isAuthenticated: !!user,
+        isAuthenticated: true,
         login,
         logout,
         switchRole,
