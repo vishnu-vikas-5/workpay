@@ -10,26 +10,44 @@ import {
   HandCoins,
   QrCode,
   FileCheck,
-  ArrowDown,
+  ArrowRight,
+  Globe,
 } from 'lucide-react';
 
-export const DownloadAppPage: React.FC = () => {
+interface DownloadAppPageProps {
+  onGoToWebApp?: () => void;
+}
+
+export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }) => {
   const [downloading, setDownloading] = useState(false);
   const [downloadStarted, setDownloadStarted] = useState(false);
+
+  const APK_DOWNLOAD_URL =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? '/WorkPay.apk'
+      : 'https://raw.githubusercontent.com/vishnu-vikas-5/workpay/main/WorkPay-debug.apk';
 
   const handleDownload = () => {
     setDownloading(true);
     setDownloadStarted(true);
 
-    // Direct download trigger
+    // Direct download trigger (local or high-speed GitHub release CDN)
     const link = document.createElement('a');
-    link.href = '/WorkPay.apk';
+    link.href = APK_DOWNLOAD_URL;
     link.download = 'WorkPay.apk';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
     setTimeout(() => setDownloading(false), 2000);
+  };
+
+  const handleOpenWebApp = () => {
+    if (onGoToWebApp) {
+      onGoToWebApp();
+    } else {
+      window.location.href = '/app';
+    }
   };
 
   return (
@@ -103,6 +121,22 @@ export const DownloadAppPage: React.FC = () => {
             <p className="text-[11px] text-slate-400">
               Direct download • No Google Play account required
             </p>
+
+            {/* Quick Link to Web App */}
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2 text-left">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white">Using PC or iPhone?</p>
+                <p className="text-[11px] text-slate-400 truncate">Manage shifts & payouts in browser</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenWebApp}
+                className="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+              >
+                <span>Open Web App</span>
+                <ArrowRight className="w-3.5 h-3.5 text-indigo-300" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -191,6 +225,32 @@ export const DownloadAppPage: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Option to Go to Real Web Portal */}
+        <div className="bg-gradient-to-r from-indigo-950/60 via-purple-950/50 to-slate-900/60 border border-indigo-400/30 rounded-3xl p-5 sm:p-6 space-y-3 text-center backdrop-blur-md shadow-xl">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider border border-indigo-400/20">
+            <Globe className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Official Web Application</span>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-extrabold text-white">
+              Need to access the Admin & Workforce Portal online?
+            </h3>
+            <p className="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
+              Manage shifts, view attendance records, approve overtime, and initiate UPI payouts directly in your browser.
+            </p>
+          </div>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleOpenWebApp}
+              className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-transform active:scale-95 inline-flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Launch Web Portal & Login</span>
+              <ArrowRight className="w-4 h-4 text-indigo-600" />
+            </button>
           </div>
         </div>
       </main>

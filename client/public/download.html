@@ -193,6 +193,15 @@
 
       <p style="font-size: 11px; color: #64748b; margin-top: 12px;">Direct download • 100% Free</p>
 
+      <!-- Quick Web Portal Link -->
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; text-align: left; gap: 8px;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #ffffff;">Using PC or iPhone?</div>
+          <div style="font-size: 11px; color: #94a3b8;">Manage shifts & payroll in browser</div>
+        </div>
+        <a href="/app" style="background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 7px 14px; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; shrink: 0;">Open Web App →</a>
+      </div>
+
       <div class="install-box">
         <h3>How to Install on Android</h3>
         <div class="step">
@@ -210,21 +219,35 @@
       </div>
     </div>
 
+    <!-- Dedicated Web Portal Card -->
+    <div style="margin-top: 20px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(129, 140, 248, 0.25); border-radius: 24px; padding: 24px 20px; text-align: center;">
+      <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(99, 102, 241, 0.2); color: #c7d2fe; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">🌐 Official Web Application</div>
+      <h3 style="font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">Need to access the Admin & Workforce Portal?</h3>
+      <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px;">Manage shifts, track worker attendance, approve overtime, and initiate UPI payouts directly in your browser.</p>
+      <a href="/app" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #ffffff; color: #0f172a; font-weight: 800; font-size: 13px; padding: 12px 24px; border-radius: 14px; text-decoration: none; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);">Launch Web Portal & Login →</a>
+    </div>
+
     <footer>
       WorkPay Standalone APK Portal • SHA-256 Verified Clean Release
     </footer>
   </div>
 
   <script>
-    document.getElementById('downloadBtn').addEventListener('click', function() {
-      var btn = this;
-      btn.style.opacity = '0.7';
-      btn.querySelector('span').innerText = 'Downloading...';
-      setTimeout(function() {
-        btn.style.opacity = '1';
-        btn.querySelector('span').innerText = 'Downloaded! Tap to Re-download';
-      }, 2500);
-    });
+    var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    var apkUrl = isLocal ? '/WorkPay.apk' : 'https://raw.githubusercontent.com/vishnu-vikas-5/workpay/main/WorkPay-debug.apk';
+    var downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+      downloadBtn.setAttribute('href', apkUrl);
+      downloadBtn.addEventListener('click', function() {
+        var btn = this;
+        btn.style.opacity = '0.7';
+        btn.querySelector('span').innerText = 'Downloading...';
+        setTimeout(function() {
+          btn.style.opacity = '1';
+          btn.querySelector('span').innerText = 'Downloaded! Tap to Re-download';
+        }, 2500);
+      });
+    }
   </script>
 </body>
 </html>

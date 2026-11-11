@@ -7,6 +7,7 @@ import {
   Users,
   CalendarDays,
   LogOut,
+  Smartphone,
 } from 'lucide-react';
 import { QuickPayConsole } from './components/common/QuickPayConsole';
 import { AttendanceSection } from './components/common/AttendanceSection';
@@ -27,16 +28,48 @@ export const App: React.FC = () => {
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
 
-  // 0. Standalone APK Download Page - Independent distribution page, does not link back to website
-  const isDownloadRoute =
-    window.location.pathname === '/download' ||
-    window.location.pathname === '/download-apk' ||
-    window.location.pathname.endsWith('/download.html') ||
-    window.location.search.includes('download') ||
-    window.location.hash.includes('download');
+  // 0. The Download Page is now the INDEX (default landing page at '/')!
+  // Direct web portal access is available via '/app', '/portal', '/dashboard', '/login', '?app', or by clicking 'Open Web App'
+  const [viewMode, setViewMode] = useState<'download' | 'app'>(() => {
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
 
-  if (isDownloadRoute) {
-    return <DownloadAppPage />;
+    // Explicit requests for web app/portal
+    if (
+      path === '/app' ||
+      path.startsWith('/app/') ||
+      path === '/portal' ||
+      path === '/dashboard' ||
+      path === '/login' ||
+      search.includes('app') ||
+      search.includes('portal') ||
+      hash.includes('app') ||
+      hash.includes('portal')
+    ) {
+      return 'app';
+    }
+
+    // Default root '/' and any explicit download paths show DownloadAppPage as the index!
+    return 'download';
+  });
+
+  const handleGoToWebApp = () => {
+    try {
+      window.history.pushState({}, '', '/app');
+    } catch (e) {}
+    setViewMode('app');
+  };
+
+  const handleGoToDownload = () => {
+    try {
+      window.history.pushState({}, '', '/');
+    } catch (e) {}
+    setViewMode('download');
+  };
+
+  if (viewMode === 'download') {
+    return <DownloadAppPage onGoToWebApp={handleGoToWebApp} />;
   }
 
   // 1. Initial Authentication Loading State
@@ -147,6 +180,16 @@ export const App: React.FC = () => {
                 <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            {/* Get Android APK Page */}
+            <button
+              onClick={handleGoToDownload}
+              className="hidden sm:flex px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200/80 transition-colors items-center gap-1 sm:gap-1.5"
+              title="Get Android APK"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Get APK</span>
+            </button>
 
             {/* Workers Roster Modal */}
             <button
