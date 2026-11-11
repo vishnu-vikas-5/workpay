@@ -23,7 +23,7 @@ import {
   INITIAL_DEPARTMENTS,
   INITIAL_USERS,
 } from './seedData';
-import { isFirebaseConfigured, db } from './firebase';
+import { isFirebaseConfigured, db, auth } from './firebase';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -35,7 +35,22 @@ import {
   deleteDoc,
   updateDoc,
   writeBatch,
+  onSnapshot,
 } from 'firebase/firestore';
+
+export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
+  const result: any = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined) {
+      if (val !== null && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
+        result[key] = sanitizeForFirestore(val);
+      } else {
+        result[key] = val;
+      }
+    }
+  }
+  return result;
+}
 
 const KEYS = {
   EMPLOYEES: 'workpay_employees',
@@ -76,10 +91,16 @@ export function deduplicateEmployees(list: Employee[]): Employee[] {
   const seenIds = new Set<string>();
   const seenPhones = new Set<string>();
   const seenUpis = new Set<string>();
-  const seenNames = new Set<string>();
   const result: Employee[] = [];
 
-  for (const emp of list) {
+  // Sort list to prioritize records with newer updatedAt or higher/updated shiftRate
+  const sorted = [...list].sort((a, b) => {
+    const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+
+  for (const emp of sorted) {
     if (!emp) continue;
     if (isDummyEmployee(emp)) continue;
 
@@ -87,25 +108,22 @@ export function deduplicateEmployees(list: Employee[]): Employee[] {
     const digits = (emp.phone || '').replace(/\D/g, '');
     const phone = digits.length >= 10 ? digits.slice(-10) : digits;
     const upi = (emp.upiId || '').trim().toLowerCase();
-    const name = (emp.fullName || '').trim().toLowerCase();
 
-    // Check if duplicate of an already accepted worker
+    // Check if duplicate of an already accepted worker by unique identity
     if (id && seenIds.has(id)) continue;
     if (phone && phone.length === 10 && seenPhones.has(phone)) continue;
     if (upi && seenUpis.has(upi)) continue;
-    if (name && seenNames.has(name)) continue;
 
     if (id) seenIds.add(id);
     if (phone && phone.length === 10) seenPhones.add(phone);
     if (upi) seenUpis.add(upi);
-    if (name) seenNames.add(name);
 
     result.push(emp);
   }
 
-  // Ensure default real employee 'vishnuvikas' is retained if list has no owner
-  if (result.length === 0 || !result.some((e) => e.fullName.trim().toLowerCase() === 'vishnuvikas')) {
-    result.unshift(INITIAL_EMPLOYEES[0]);
+  // Ensure default real employee is retained ONLY if list has no records
+  if (result.length === 0) {
+    result.push(INITIAL_EMPLOYEES[0]);
   }
 
   return result;
@@ -274,7 +292,7 @@ export const storageService = {
 
     // Background Firestore write (never blocks UI)
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'employees', employee.id), employee).catch((e) => {
+      setDoc(doc(db, 'employees', employee.id), sanitizeForFirestore(employee)).catch((e) => {
         console.warn('Firestore background saveEmployee error:', e);
       });
     }
@@ -318,7 +336,7 @@ export const storageService = {
     setLocal(KEYS.SHIFTS, clean);
 
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'shifts', shift.id), shift).catch((e) => {
+      setDoc(doc(db, 'shifts', shift.id), sanitizeForFirestore(shift)).catch((e) => {
         console.warn('Firestore background saveShift error:', e);
       });
     }
@@ -362,7 +380,7 @@ export const storageService = {
 
     // Fire-and-forget sync to Firestore
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'attendance', attendance.id), attendance).catch((e) => {
+      setDoc(doc(db, 'attendance', attendance.id), sanitizeForFirestore(attendance)).catch((e) => {
         console.warn('Firestore background saveAttendance error:', e);
       });
     }
@@ -468,7 +486,7 @@ export const storageService = {
     setLocal(KEYS.TRANSACTIONS, clean);
 
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'payments', tx.id), tx).catch((e) => {
+      setDoc(doc(db, 'payments', tx.id), sanitizeForFirestore(tx)).catch((e) => {
         console.warn('Firestore background saveTransaction error:', e);
       });
     }
@@ -563,7 +581,7 @@ export const storageService = {
     setLocal(KEYS.ADVANCES, clean);
 
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'advances', adv.id), adv).catch((e) => {
+      setDoc(doc(db, 'advances', adv.id), sanitizeForFirestore(adv)).catch((e) => {
         console.warn('Firestore background saveAdvance error:', e);
       });
     }
@@ -635,9 +653,6 @@ export const storageService = {
             batch.delete(doc(db, 'shifts', id));
             batch.delete(doc(db, 'attendance', id));
           }
-          for (const emp of cleanEmps) {
-            batch.set(doc(db, 'employees', emp.id), emp);
-          }
           await batch.commit();
         } catch (e) {
           console.warn('Background Firestore purge warning:', e);
@@ -654,57 +669,275 @@ export const storageService = {
     };
   },
 
-  // SILENT BACKGROUND SYNC WITH FIRESTORE
-  syncWithFirestoreInBackground: async (onDataUpdated?: () => void): Promise<void> => {
-    if (!isFirebaseConfigured) return;
+  // FULL BIDIRECTIONAL TWO-WAY SYNCHRONIZATION WITH FIRESTORE
+  syncWithFirestore: async (onDataUpdated?: () => void): Promise<{ pulled: number; pushed: number }> => {
+    if (!isFirebaseConfigured || !auth.currentUser) {
+      return { pulled: 0, pushed: 0 };
+    }
+
+    let pulledCount = 0;
+    let pushedCount = 0;
+
     try {
+      // 1. Fetch remote snapshots in parallel
       const [empSnap, attSnap, shfSnap, txSnap, advSnap] = await Promise.all([
-        getDocs(collection(db, 'employees')).catch(() => null),
-        getDocs(collection(db, 'attendance')).catch(() => null),
-        getDocs(collection(db, 'shifts')).catch(() => null),
-        getDocs(collection(db, 'payments')).catch(() => null),
-        getDocs(collection(db, 'advances')).catch(() => null),
+        getDocs(collection(db, 'employees')).catch((e) => { console.warn('Sync read employees err:', e); return null; }),
+        getDocs(collection(db, 'attendance')).catch((e) => { console.warn('Sync read attendance err:', e); return null; }),
+        getDocs(collection(db, 'shifts')).catch((e) => { console.warn('Sync read shifts err:', e); return null; }),
+        getDocs(collection(db, 'payments')).catch((e) => { console.warn('Sync read payments err:', e); return null; }),
+        getDocs(collection(db, 'advances')).catch((e) => { console.warn('Sync read advances err:', e); return null; }),
       ]);
 
-      let changed = false;
+      // 2. EMPLOYEES: Merge & Push
+      const localEmps = getLocal<Employee[]>(KEYS.EMPLOYEES, []);
+      const remoteEmps = empSnap && !empSnap.empty ? empSnap.docs.map((d) => d.data() as Employee) : [];
+      const mergedEmpsMap = new Map<string, Employee>();
+      remoteEmps.forEach((e) => mergedEmpsMap.set(e.id, e));
 
-      if (empSnap && !empSnap.empty) {
-        const remoteEmps = empSnap.docs.map((d) => d.data() as Employee);
-        const cleanEmps = deduplicateEmployees(remoteEmps);
-        setLocal(KEYS.EMPLOYEES, cleanEmps);
-        changed = true;
-      }
-      if (attSnap && !attSnap.empty) {
-        const remoteAtts = attSnap.docs.map((d) => d.data() as Attendance);
-        const cleanAtts = deduplicateAttendance(remoteAtts);
-        setLocal(KEYS.ATTENDANCE, cleanAtts);
-        changed = true;
-      }
-      if (shfSnap && !shfSnap.empty) {
-        const remoteShfs = shfSnap.docs.map((d) => d.data() as Shift);
-        const cleanShfs = deduplicateShifts(remoteShfs);
-        setLocal(KEYS.SHIFTS, cleanShfs);
-        changed = true;
-      }
-      if (txSnap && !txSnap.empty) {
-        const remoteTxs = txSnap.docs.map((d) => d.data() as PaymentTransaction);
-        const cleanTxs = deduplicateTransactions(remoteTxs);
-        setLocal(KEYS.TRANSACTIONS, cleanTxs);
-        changed = true;
-      }
-      if (advSnap && !advSnap.empty) {
-        const remoteAdvs = advSnap.docs.map((d) => d.data() as AdvanceRecord);
-        const cleanAdvs = deduplicateAdvances(remoteAdvs);
-        setLocal(KEYS.ADVANCES, cleanAdvs);
-        changed = true;
+      const empsToPush: Employee[] = [];
+      for (const loc of localEmps) {
+        if (!loc || isDummyEmployee(loc)) continue;
+        if (!mergedEmpsMap.has(loc.id)) {
+          mergedEmpsMap.set(loc.id, loc);
+          empsToPush.push(loc);
+        } else {
+          const rem = mergedEmpsMap.get(loc.id)!;
+          const locTime = new Date(loc.updatedAt || loc.createdAt || 0).getTime();
+          const remTime = new Date(rem.updatedAt || rem.createdAt || 0).getTime();
+          if (locTime > remTime || (loc.shiftRate && loc.shiftRate !== rem.shiftRate && loc.shiftRate === 900)) {
+            mergedEmpsMap.set(loc.id, loc);
+            empsToPush.push(loc);
+          }
+        }
       }
 
-      if (changed && onDataUpdated) {
+      const finalEmps = deduplicateEmployees(Array.from(mergedEmpsMap.values()));
+      setLocal(KEYS.EMPLOYEES, finalEmps);
+      pulledCount += remoteEmps.length;
+
+      for (const emp of empsToPush) {
+        try {
+          await setDoc(doc(db, 'employees', emp.id), sanitizeForFirestore(emp));
+          pushedCount++;
+        } catch (err) {
+          console.warn('Sync push employee err:', err);
+        }
+      }
+
+      // 3. PAYMENTS / TRANSACTIONS: Merge & Push
+      const localTxs = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, []);
+      const remoteTxs = txSnap && !txSnap.empty ? txSnap.docs.map((d) => d.data() as PaymentTransaction) : [];
+      const mergedTxMap = new Map<string, PaymentTransaction>();
+      remoteTxs.forEach((t) => mergedTxMap.set(t.id, t));
+
+      const txsToPush: PaymentTransaction[] = [];
+      for (const loc of localTxs) {
+        if (!loc || !loc.id) continue;
+        if (!mergedTxMap.has(loc.id)) {
+          mergedTxMap.set(loc.id, loc);
+          txsToPush.push(loc);
+        }
+      }
+
+      const finalTxs = deduplicateTransactions(Array.from(mergedTxMap.values()));
+      setLocal(KEYS.TRANSACTIONS, finalTxs);
+      pulledCount += remoteTxs.length;
+
+      for (const tx of txsToPush) {
+        try {
+          await setDoc(doc(db, 'payments', tx.id), sanitizeForFirestore(tx));
+          pushedCount++;
+        } catch (err) {
+          console.warn('Sync push payment err:', err);
+        }
+      }
+
+      // 4. ATTENDANCE: Merge & Push
+      const localAtts = getLocal<Attendance[]>(KEYS.ATTENDANCE, []);
+      const remoteAtts = attSnap && !attSnap.empty ? attSnap.docs.map((d) => d.data() as Attendance) : [];
+      const mergedAttMap = new Map<string, Attendance>();
+      remoteAtts.forEach((a) => mergedAttMap.set(a.id, a));
+
+      const attsToPush: Attendance[] = [];
+      for (const loc of localAtts) {
+        if (!loc || !loc.id) continue;
+        if (!mergedAttMap.has(loc.id)) {
+          mergedAttMap.set(loc.id, loc);
+          attsToPush.push(loc);
+        } else {
+          const rem = mergedAttMap.get(loc.id)!;
+          if (loc.isPaid && !rem.isPaid) {
+            mergedAttMap.set(loc.id, loc);
+            attsToPush.push(loc);
+          }
+        }
+      }
+
+      const finalAtts = deduplicateAttendance(Array.from(mergedAttMap.values()));
+      setLocal(KEYS.ATTENDANCE, finalAtts);
+      pulledCount += remoteAtts.length;
+
+      for (const att of attsToPush) {
+        try {
+          await setDoc(doc(db, 'attendance', att.id), sanitizeForFirestore(att));
+          pushedCount++;
+        } catch (err) {
+          console.warn('Sync push attendance err:', err);
+        }
+      }
+
+      // 5. ADVANCES: Merge & Push
+      const localAdvs = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+      const remoteAdvs = advSnap && !advSnap.empty ? advSnap.docs.map((d) => d.data() as AdvanceRecord) : [];
+      const mergedAdvMap = new Map<string, AdvanceRecord>();
+      remoteAdvs.forEach((a) => mergedAdvMap.set(a.id, a));
+
+      const advsToPush: AdvanceRecord[] = [];
+      for (const loc of localAdvs) {
+        if (!loc || !loc.id) continue;
+        if (!mergedAdvMap.has(loc.id)) {
+          mergedAdvMap.set(loc.id, loc);
+          advsToPush.push(loc);
+        }
+      }
+
+      const finalAdvs = deduplicateAdvances(Array.from(mergedAdvMap.values()));
+      setLocal(KEYS.ADVANCES, finalAdvs);
+      pulledCount += remoteAdvs.length;
+
+      for (const adv of advsToPush) {
+        try {
+          await setDoc(doc(db, 'advances', adv.id), sanitizeForFirestore(adv));
+          pushedCount++;
+        } catch (err) {
+          console.warn('Sync push advance err:', err);
+        }
+      }
+
+      // 6. SHIFTS: Merge & Push
+      const localShfs = getLocal<Shift[]>(KEYS.SHIFTS, []);
+      const remoteShfs = shfSnap && !shfSnap.empty ? shfSnap.docs.map((d) => d.data() as Shift) : [];
+      const mergedShfMap = new Map<string, Shift>();
+      remoteShfs.forEach((s) => mergedShfMap.set(s.id, s));
+
+      const shfsToPush: Shift[] = [];
+      for (const loc of localShfs) {
+        if (!loc || !loc.id) continue;
+        if (!mergedShfMap.has(loc.id)) {
+          mergedShfMap.set(loc.id, loc);
+          shfsToPush.push(loc);
+        }
+      }
+
+      const finalShfs = deduplicateShifts(Array.from(mergedShfMap.values()));
+      setLocal(KEYS.SHIFTS, finalShfs);
+      pulledCount += remoteShfs.length;
+
+      for (const shf of shfsToPush) {
+        try {
+          await setDoc(doc(db, 'shifts', shf.id), sanitizeForFirestore(shf));
+          pushedCount++;
+        } catch (err) {
+          console.warn('Sync push shift err:', err);
+        }
+      }
+
+      if (onDataUpdated) {
         onDataUpdated();
       }
+
+      return { pulled: pulledCount, pushed: pushedCount };
     } catch (e) {
-      console.warn('Background sync with Firestore completed with note:', e);
+      console.warn('syncWithFirestore error:', e);
+      return { pulled: pulledCount, pushed: pushedCount };
     }
+  },
+
+  // SILENT BACKGROUND SYNC WITH FIRESTORE (backwards compatibility)
+  syncWithFirestoreInBackground: async (onDataUpdated?: () => void): Promise<void> => {
+    await storageService.syncWithFirestore(onDataUpdated);
+  },
+
+  // REAL-TIME FIRESTORE LISTENER (Keeps laptop and phone in live sync)
+  subscribeToCloudUpdates: (onDataUpdated: () => void): (() => void) => {
+    if (!isFirebaseConfigured || !auth.currentUser) {
+      return () => {};
+    }
+
+    const unsubs: (() => void)[] = [];
+
+    try {
+      // 1. Employees live listener
+      const unsubEmp = onSnapshot(collection(db, 'employees'), (snap) => {
+        if (!snap.empty) {
+          const remoteEmps = snap.docs.map((d) => d.data() as Employee);
+          const localEmps = getLocal<Employee[]>(KEYS.EMPLOYEES, []);
+          const merged = deduplicateEmployees([...remoteEmps, ...localEmps]);
+          setLocal(KEYS.EMPLOYEES, merged);
+          onDataUpdated();
+        }
+      }, (err) => console.warn('Employees onSnapshot error:', err));
+      unsubs.push(unsubEmp);
+
+      // 2. Attendance live listener
+      const unsubAtt = onSnapshot(collection(db, 'attendance'), (snap) => {
+        if (!snap.empty) {
+          const remoteAtts = snap.docs.map((d) => d.data() as Attendance);
+          const localAtts = getLocal<Attendance[]>(KEYS.ATTENDANCE, []);
+          const merged = deduplicateAttendance([...remoteAtts, ...localAtts]);
+          setLocal(KEYS.ATTENDANCE, merged);
+          onDataUpdated();
+        }
+      }, (err) => console.warn('Attendance onSnapshot error:', err));
+      unsubs.push(unsubAtt);
+
+      // 3. Payments live listener
+      const unsubPay = onSnapshot(collection(db, 'payments'), (snap) => {
+        if (!snap.empty) {
+          const remoteTxs = snap.docs.map((d) => d.data() as PaymentTransaction);
+          const localTxs = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, []);
+          const merged = deduplicateTransactions([...remoteTxs, ...localTxs]);
+          setLocal(KEYS.TRANSACTIONS, merged);
+          onDataUpdated();
+        }
+      }, (err) => console.warn('Payments onSnapshot error:', err));
+      unsubs.push(unsubPay);
+
+      // 4. Advances live listener
+      const unsubAdv = onSnapshot(collection(db, 'advances'), (snap) => {
+        if (!snap.empty) {
+          const remoteAdvs = snap.docs.map((d) => d.data() as AdvanceRecord);
+          const localAdvs = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+          const merged = deduplicateAdvances([...remoteAdvs, ...localAdvs]);
+          setLocal(KEYS.ADVANCES, merged);
+          onDataUpdated();
+        }
+      }, (err) => console.warn('Advances onSnapshot error:', err));
+      unsubs.push(unsubAdv);
+
+      // 5. Shifts live listener
+      const unsubShf = onSnapshot(collection(db, 'shifts'), (snap) => {
+        if (!snap.empty) {
+          const remoteShfs = snap.docs.map((d) => d.data() as Shift);
+          const localShfs = getLocal<Shift[]>(KEYS.SHIFTS, []);
+          const merged = deduplicateShifts([...remoteShfs, ...localShfs]);
+          setLocal(KEYS.SHIFTS, merged);
+          onDataUpdated();
+        }
+      }, (err) => console.warn('Shifts onSnapshot error:', err));
+      unsubs.push(unsubShf);
+
+    } catch (e) {
+      console.warn('Error setting up cloud listeners:', e);
+    }
+
+    return () => {
+      unsubs.forEach((u) => {
+        try {
+          u();
+        } catch (e) {}
+      });
+    };
   },
 
   // SYNC LOCAL DATA DIRECTLY TO CLOUD

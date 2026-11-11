@@ -8,6 +8,7 @@ import {
   CalendarDays,
   LogOut,
   Smartphone,
+  RefreshCw,
 } from 'lucide-react';
 import { QuickPayConsole } from './components/common/QuickPayConsole';
 import { AttendanceSection } from './components/common/AttendanceSection';
@@ -21,12 +22,24 @@ import { useAppData } from './context/AppDataContext';
 import { useAuth } from './context/AuthContext';
 
 export const App: React.FC = () => {
-  const { employees, refreshAll } = useAppData();
+  const { employees, refreshAll, syncWithCloud, isSyncing } = useAppData();
   const { user, isAuthenticated, authLoading, firebaseUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'quickpay' | 'attendance' | 'history'>('quickpay');
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  const handleManualSync = async () => {
+    try {
+      const res = await syncWithCloud();
+      setSyncNotice(`Synced (${res.pulled} in, ${res.pushed} out)`);
+      setTimeout(() => setSyncNotice(null), 3000);
+    } catch (e: any) {
+      setSyncNotice('Sync failed');
+      setTimeout(() => setSyncNotice(null), 3000);
+    }
+  };
 
   // 0. The Download Page is now the INDEX (default landing page at '/')!
   // Direct web portal access is available via '/app', '/portal', '/dashboard', '/login', '?app', or by clicking 'Open Web App'
@@ -180,6 +193,23 @@ export const App: React.FC = () => {
                 <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            {/* Cloud Sync Status & Trigger */}
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className={`px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1 sm:gap-1.5 ${
+                isSyncing
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
+                  : syncNotice
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+              }`}
+              title="Sync phone and laptop records via cloud"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-600' : syncNotice ? 'text-emerald-600' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">{syncNotice || (isSyncing ? 'Syncing...' : 'Sync Cloud')}</span>
+            </button>
 
             {/* Get Android APK Page */}
             <button

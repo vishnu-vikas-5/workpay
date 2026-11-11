@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users, Pencil, Trash2, UserPlus, Search, Download, Upload, Database, HandCoins, Sparkles } from 'lucide-react';
+import { X, Users, Pencil, Trash2, UserPlus, Search, Download, Upload, Database, HandCoins, Sparkles, RefreshCw } from 'lucide-react';
 import { Employee } from '../../types';
 import { useAppData } from '../../context/AppDataContext';
 import { formatINR } from '../../utils/utils';
@@ -19,12 +19,21 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
   onEdit,
   onAddNew,
 }) => {
-  const { employees, deleteEmployee, refreshAll, cleanDuplicateData } = useAppData();
+  const { employees, deleteEmployee, refreshAll, cleanDuplicateData, syncWithCloud, isSyncing } = useAppData();
   const [search, setSearch] = useState('');
   const [lendEmpId, setLendEmpId] = useState<string | null>(null);
   const [cleaning, setCleaning] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleSyncCloud = async () => {
+    try {
+      const res = await syncWithCloud();
+      alert(`Cloud sync complete! Synced ${res.pulled} incoming and ${res.pushed} outgoing records across phone and laptop.`);
+    } catch (e: any) {
+      alert('Error syncing with cloud: ' + e.message);
+    }
+  };
 
   const handleCleanDuplicates = async () => {
     setCleaning(true);
@@ -253,6 +262,16 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
                 className="hidden"
               />
             </label>
+
+            <button
+              onClick={handleSyncCloud}
+              disabled={isSyncing}
+              className="px-2.5 py-1.5 text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+              title="Sync phone and laptop with cloud database"
+            >
+              <RefreshCw className={`w-3 h-3 text-indigo-600 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync Cloud'}</span>
+            </button>
           </div>
 
           <button

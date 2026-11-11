@@ -30,8 +30,8 @@ export const INITIAL_EMPLOYEES: Employee[] = [
     department: 'Operations',
     designation: 'Shift Specialist',
     dateOfJoining: '2026-01-01',
-    shiftRate: 801, // ₹801 per 8hr shift per user's live settings
-    hourlyWage: 100.13, // 801 / 8 = ₹100.13/hr
+    shiftRate: 900, // ₹900 per 8hr shift per user's live settings
+    hourlyWage: 112.5, // 900 / 8 = ₹112.50/hr
     standardWorkingHours: 8,
     overtimeMultiplier: 1.0,
     upiId: 'vishnuvikas2@oksbi',

@@ -116,12 +116,14 @@ interface AppDataContextType {
     cleanedShifts: number;
     cleanedTransactions: number;
   }>;
+  syncWithCloud: () => Promise<{ pulled: number; pushed: number }>;
+  isSyncing: boolean;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -133,6 +135,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -180,16 +183,57 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
+  // 1. Instant 0ms local data load on mount
   useEffect(() => {
-    // Immediate 0ms local data load
     loadData();
-
-    // Background silent Firestore synchronization
-    storageService.syncWithFirestoreInBackground(() => {
-      // If remote has newer data, update state quietly without loader flash
-      loadData();
-    });
   }, [loadData]);
+
+  // 2. Reactive cloud synchronization and real-time listeners when user/auth is active
+  useEffect(() => {
+    if (!firebaseUser) return;
+
+    let isSubscribed = true;
+
+    const performSync = async () => {
+      setIsSyncing(true);
+      try {
+        await storageService.syncWithFirestore();
+        if (isSubscribed) {
+          await loadData();
+        }
+      } catch (err) {
+        console.warn('Reactive cloud sync notice:', err);
+      } finally {
+        if (isSubscribed) {
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    performSync();
+
+    const unsubscribe = storageService.subscribeToCloudUpdates(() => {
+      if (isSubscribed) {
+        loadData();
+      }
+    });
+
+    return () => {
+      isSubscribed = false;
+      unsubscribe();
+    };
+  }, [firebaseUser, loadData]);
+
+  const syncWithCloud = async (): Promise<{ pulled: number; pushed: number }> => {
+    setIsSyncing(true);
+    try {
+      const res = await storageService.syncWithFirestore();
+      await loadData();
+      return res;
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // EMPLOYEES
   const addEmployee = async (empData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<Employee> => {
@@ -1239,6 +1283,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         markAllNotificationsRead,
         resetToSeedData,
         cleanDuplicateData,
+        syncWithCloud,
+        isSyncing,
       }}
     >
       {children}
