@@ -9,9 +9,12 @@ WorkPay is an enterprise-grade, modern full-stack web application designed for i
 ## 🚀 Key Highlights & Architecture
 
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS + Lucide React + Recharts + jsPDF + SheetJS (XLSX).
-- **Backend**: Node.js & Express API Server (`server/`) with RazorpayX Payout Client and Webhook signature verification, plus Firebase Cloud Functions definitions (`functions/`).
-- **Database & Security**: Cloud Firestore with hardened, role-based access control rules (`firestore.rules`) and composite indexes (`firestore.indexes.json`).
-- **Payment Processing**: Full integration with **RazorpayX Payout API** supporting:
+- **Mobile Native**: Capacitor 8 for Android with native `@capacitor/filesystem` and `@capacitor/share` plugins for direct PDF vouchers and database backups.
+- **Backend**: Node.js & Express API Server (`server/`) with RazorpayX Payout Client and Webhook signature verification, plus standalone APK distribution.
+- **Database & Architecture**: Local-First 0ms optimistic UI architecture with Google Cloud Firestore remote persistence, multi-tab IndexedDB cache, and background non-blocking sync.
+- **Payment Processing**: Full integration with **RazorpayX Payout API** and direct **NPCI UPI Intent & QR Settlement** (Google Pay, PhonePe, Paytm, BHIM).
+- **Worker Lending & Khata Ledger**: Integrated lending module to track cash/UPI loans to workers and deduct them flexibly from daily or weekly payouts.
+- **Standalone APK Distribution**: Dedicated, unlinked public download page at `/download` to distribute the verified Android APK (`WorkPay.apk`) to employees without exposing the private website.
   - 24x7 Instant **UPI Payouts** directly to worker VPA (e.g. `rajesh@okhdfcbank`).
   - Direct Bank Account transfers via **IMPS / NEFT** with masked account safety.
   - Interactive **UPI Intent & Dynamic QR Code Modal** (Google Pay, PhonePe, Paytm).
