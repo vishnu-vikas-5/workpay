@@ -48,6 +48,145 @@ const KEYS = {
   ADVANCES: 'workpay_advances',
 };
 
+// Known sample / dummy worker IDs & names to purge
+export const DUMMY_EMPLOYEE_IDS = new Set(['emp-1', 'emp-2', 'emp-3', 'emp-4', 'emp-5', 'emp-6']);
+export const DUMMY_EMPLOYEE_NAMES = new Set([
+  'rajesh kumar',
+  'kavita sundaram',
+  'mohammed arif',
+  'deepak patel',
+  'ananya deshmukh',
+  'suresh gowda',
+]);
+
+export function isDummyEmployee(emp: Partial<Employee>): boolean {
+  if (emp.id && DUMMY_EMPLOYEE_IDS.has(emp.id)) return true;
+  if (emp.fullName && DUMMY_EMPLOYEE_NAMES.has(emp.fullName.trim().toLowerCase())) return true;
+  return false;
+}
+
+/**
+ * Deduplicates employees strictly by ID, normalized 10-digit phone, UPI ID, or full name.
+ * Always purges dummy employees and retains genuine workforce records.
+ */
+export function deduplicateEmployees(list: Employee[]): Employee[] {
+  const seenIds = new Set<string>();
+  const seenPhones = new Set<string>();
+  const seenUpis = new Set<string>();
+  const seenNames = new Set<string>();
+  const result: Employee[] = [];
+
+  for (const emp of list) {
+    if (!emp) continue;
+    if (isDummyEmployee(emp)) continue;
+
+    const id = emp.id;
+    const digits = (emp.phone || '').replace(/\D/g, '');
+    const phone = digits.length >= 10 ? digits.slice(-10) : digits;
+    const upi = (emp.upiId || '').trim().toLowerCase();
+    const name = (emp.fullName || '').trim().toLowerCase();
+
+    // Check if duplicate of an already accepted worker
+    if (id && seenIds.has(id)) continue;
+    if (phone && phone.length === 10 && seenPhones.has(phone)) continue;
+    if (upi && seenUpis.has(upi)) continue;
+    if (name && seenNames.has(name)) continue;
+
+    if (id) seenIds.add(id);
+    if (phone && phone.length === 10) seenPhones.add(phone);
+    if (upi) seenUpis.add(upi);
+    if (name) seenNames.add(name);
+
+    result.push(emp);
+  }
+
+  // Ensure default real employee 'vishnuvikas' is retained if list has no owner
+  if (result.length === 0 || !result.some((e) => e.fullName.trim().toLowerCase() === 'vishnuvikas')) {
+    result.unshift(INITIAL_EMPLOYEES[0]);
+  }
+
+  return result;
+}
+
+/**
+ * Deduplicates attendance records ensuring strictly ONE record per employee per date.
+ * Prioritizes marked/paid records over unmarked or older records.
+ */
+export function deduplicateAttendance(records: Attendance[]): Attendance[] {
+  const map = new Map<string, Attendance>();
+
+  for (const att of records) {
+    if (!att || !att.employeeId || !att.date) continue;
+    if (DUMMY_EMPLOYEE_IDS.has(att.employeeId)) continue;
+    if (DUMMY_EMPLOYEE_NAMES.has((att.employeeName || '').trim().toLowerCase())) continue;
+
+    const key = `${att.employeeId}_${att.date}`;
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, att);
+    } else {
+      // Prioritize paid or active shift record over older records
+      if (att.isPaid && !existing.isPaid) {
+        map.set(key, att);
+      } else if ((att.shiftsCount || 0) > (existing.shiftsCount || 0)) {
+        map.set(key, att);
+      } else if (new Date(att.createdAt || 0).getTime() > new Date(existing.createdAt || 0).getTime()) {
+        map.set(key, att);
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Deduplicates shifts by employeeId + shiftDate + scheduledStartTime
+ */
+export function deduplicateShifts(shifts: Shift[]): Shift[] {
+  const map = new Map<string, Shift>();
+  for (const s of shifts) {
+    if (!s || !s.employeeId) continue;
+    if (DUMMY_EMPLOYEE_IDS.has(s.employeeId)) continue;
+    if (DUMMY_EMPLOYEE_NAMES.has((s.employeeName || '').trim().toLowerCase())) continue;
+    const key = `${s.employeeId}_${s.shiftDate}_${s.scheduledStartTime || '08:00'}`;
+    if (!map.has(key)) {
+      map.set(key, s);
+    }
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Deduplicates payment transactions by transaction ID
+ */
+export function deduplicateTransactions(txs: PaymentTransaction[]): PaymentTransaction[] {
+  const map = new Map<string, PaymentTransaction>();
+  for (const t of txs) {
+    if (!t || !t.id) continue;
+    if (t.employeeId && DUMMY_EMPLOYEE_IDS.has(t.employeeId)) continue;
+    if (t.employeeName && DUMMY_EMPLOYEE_NAMES.has(t.employeeName.trim().toLowerCase())) continue;
+    if (!map.has(t.id)) {
+      map.set(t.id, t);
+    }
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Deduplicates advances (loans/khata) by advance ID
+ */
+export function deduplicateAdvances(advs: AdvanceRecord[]): AdvanceRecord[] {
+  const map = new Map<string, AdvanceRecord>();
+  for (const a of advs) {
+    if (!a || !a.id) continue;
+    if (a.employeeId && DUMMY_EMPLOYEE_IDS.has(a.employeeId)) continue;
+    if (!map.has(a.id)) {
+      map.set(a.id, a);
+    }
+  }
+  return Array.from(map.values());
+}
+
 function getLocal<T>(key: string, defaultVal: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -111,21 +250,25 @@ export const storageService = {
 
   // EMPLOYEES
   getEmployees: async (): Promise<Employee[]> => {
+    let list: Employee[] = [];
     if (isFirebaseConfigured) {
       try {
         const snap = await getDocs(collection(db, 'employees'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as Employee);
+        if (!snap.empty) {
+          list = snap.docs.map((d) => d.data() as Employee);
+        }
       } catch (e) {
         console.warn('Fallback to local employees', e);
       }
     }
-    const local = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
-    if (!local.some((e) => e.fullName.toLowerCase() === 'vishnuvikas')) {
-      const merged = [INITIAL_EMPLOYEES[0], ...local];
-      setLocal(KEYS.EMPLOYEES, merged);
-      return merged;
+
+    if (!list || list.length === 0) {
+      list = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
     }
-    return local;
+
+    const clean = deduplicateEmployees(list);
+    setLocal(KEYS.EMPLOYEES, clean);
+    return clean;
   },
 
   saveEmployee: async (employee: Employee): Promise<void> => {
@@ -165,15 +308,25 @@ export const storageService = {
 
   // SHIFTS
   getShifts: async (): Promise<Shift[]> => {
+    let list: Shift[] = [];
     if (isFirebaseConfigured) {
       try {
         const snap = await getDocs(collection(db, 'shifts'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as Shift);
+        if (!snap.empty) {
+          list = snap.docs.map((d) => d.data() as Shift);
+        }
       } catch (e) {
         console.warn('Fallback to local shifts', e);
       }
     }
-    return getLocal<Shift[]>(KEYS.SHIFTS, INITIAL_SHIFTS);
+
+    if (!list || list.length === 0) {
+      list = getLocal<Shift[]>(KEYS.SHIFTS, INITIAL_SHIFTS);
+    }
+
+    const clean = deduplicateShifts(list);
+    setLocal(KEYS.SHIFTS, clean);
+    return clean;
   },
 
   saveShift: async (shift: Shift): Promise<void> => {
@@ -213,15 +366,25 @@ export const storageService = {
 
   // ATTENDANCE
   getAttendance: async (): Promise<Attendance[]> => {
+    let list: Attendance[] = [];
     if (isFirebaseConfigured) {
       try {
         const snap = await getDocs(collection(db, 'attendance'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as Attendance);
+        if (!snap.empty) {
+          list = snap.docs.map((d) => d.data() as Attendance);
+        }
       } catch (e) {
         console.warn('Fallback to local attendance', e);
       }
     }
-    return getLocal<Attendance[]>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+
+    if (!list || list.length === 0) {
+      list = getLocal<Attendance[]>(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+    }
+
+    const clean = deduplicateAttendance(list);
+    setLocal(KEYS.ATTENDANCE, clean);
+    return clean;
   },
 
   saveAttendance: async (attendance: Attendance): Promise<void> => {
@@ -315,21 +478,25 @@ export const storageService = {
 
   // TRANSACTIONS
   getTransactions: async (): Promise<PaymentTransaction[]> => {
+    let list: PaymentTransaction[] = [];
     if (isFirebaseConfigured) {
       try {
         const snap = await getDocs(collection(db, 'payments'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as PaymentTransaction);
+        if (!snap.empty) {
+          list = snap.docs.map((d) => d.data() as PaymentTransaction);
+        }
       } catch (e) {
         console.warn('Fallback to local payments', e);
       }
     }
-    const localTx = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
-    if (!localTx.some((t) => t.id === 'txn-wp-902')) {
-      const mergedTx = [INITIAL_TRANSACTIONS[0], ...localTx];
-      setLocal(KEYS.TRANSACTIONS, mergedTx);
-      return mergedTx;
+
+    if (!list || list.length === 0) {
+      list = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
     }
-    return localTx;
+
+    const clean = deduplicateTransactions(list);
+    setLocal(KEYS.TRANSACTIONS, clean);
+    return clean;
   },
 
   saveTransaction: async (tx: PaymentTransaction): Promise<void> => {
@@ -410,15 +577,83 @@ export const storageService = {
 
   // ADVANCES / LENDING
   getAdvances: async (): Promise<AdvanceRecord[]> => {
+    let list: AdvanceRecord[] = [];
     if (isFirebaseConfigured) {
       try {
         const snap = await getDocs(collection(db, 'advances'));
-        if (!snap.empty) return snap.docs.map((d) => d.data() as AdvanceRecord);
+        if (!snap.empty) {
+          list = snap.docs.map((d) => d.data() as AdvanceRecord);
+        }
       } catch (e) {
         console.warn('Fallback to local advances', e);
       }
     }
-    return getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+
+    if (!list || list.length === 0) {
+      list = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+    }
+
+    const clean = deduplicateAdvances(list);
+    setLocal(KEYS.ADVANCES, clean);
+    return clean;
+  },
+
+  // MASTER PURGE OF DUPLICATE & SAMPLE DATA
+  purgeDuplicateAndSampleData: async (): Promise<{
+    cleanedEmployees: number;
+    cleanedAttendance: number;
+    cleanedShifts: number;
+    cleanedTransactions: number;
+    cleanedAdvances: number;
+  }> => {
+    // 1. Purge employees
+    const rawEmps = getLocal<Employee[]>(KEYS.EMPLOYEES, []);
+    const cleanEmps = deduplicateEmployees(rawEmps);
+    setLocal(KEYS.EMPLOYEES, cleanEmps);
+
+    // 2. Purge attendance
+    const rawAtts = getLocal<Attendance[]>(KEYS.ATTENDANCE, []);
+    const cleanAtts = deduplicateAttendance(rawAtts);
+    setLocal(KEYS.ATTENDANCE, cleanAtts);
+
+    // 3. Purge shifts
+    const rawShifts = getLocal<Shift[]>(KEYS.SHIFTS, []);
+    const cleanShifts = deduplicateShifts(rawShifts);
+    setLocal(KEYS.SHIFTS, cleanShifts);
+
+    // 4. Purge transactions
+    const rawTxs = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, []);
+    const cleanTxs = deduplicateTransactions(rawTxs);
+    setLocal(KEYS.TRANSACTIONS, cleanTxs);
+
+    // 5. Purge advances
+    const rawAdvs = getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+    const cleanAdvs = deduplicateAdvances(rawAdvs);
+    setLocal(KEYS.ADVANCES, cleanAdvs);
+
+    // 6. Delete dummy documents from Firestore
+    if (isFirebaseConfigured) {
+      try {
+        for (const id of DUMMY_EMPLOYEE_IDS) {
+          await deleteDoc(doc(db, 'employees', id)).catch(() => {});
+          await deleteDoc(doc(db, 'shifts', id)).catch(() => {});
+          await deleteDoc(doc(db, 'attendance', id)).catch(() => {});
+        }
+        for (const emp of cleanEmps) {
+          await setDoc(doc(db, 'employees', emp.id), emp, { merge: true }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn('Firestore purge error:', e);
+      }
+    }
+
+    return {
+      cleanedEmployees: Math.max(0, rawEmps.length - cleanEmps.length),
+      cleanedAttendance: Math.max(0, rawAtts.length - cleanAtts.length),
+      cleanedShifts: Math.max(0, rawShifts.length - cleanShifts.length),
+      cleanedTransactions: Math.max(0, rawTxs.length - cleanTxs.length),
+      cleanedAdvances: Math.max(0, rawAdvs.length - cleanAdvs.length),
+    };
   },
 
   saveAdvance: async (adv: AdvanceRecord): Promise<void> => {

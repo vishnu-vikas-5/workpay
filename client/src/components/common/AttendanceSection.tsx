@@ -16,6 +16,7 @@ import {
   Smartphone,
   Check,
   HandCoins,
+  Sparkles,
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import { Employee, Attendance, PaymentTransaction } from '../../types';
@@ -47,6 +48,7 @@ export const AttendanceSection: React.FC = () => {
     settleWeeklyAttendance,
     recordQuickPayment,
     refreshAll,
+    cleanDuplicateData,
   } = useAppData();
 
   const [currentMonday, setCurrentMonday] = useState<Date>(() => getMonday(new Date()));
@@ -415,6 +417,18 @@ export const AttendanceSection: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await cleanDuplicateData();
+                }}
+                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs flex items-center gap-1 transition-colors"
+                title="Remove duplicate attendance and dummy records"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Remove Duplicates</span>
+              </button>
+
               <button
                 type="button"
                 onClick={async () => {

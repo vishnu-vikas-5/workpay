@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users, Pencil, Trash2, UserPlus, Search, Download, Upload, Database, HandCoins } from 'lucide-react';
+import { X, Users, Pencil, Trash2, UserPlus, Search, Download, Upload, Database, HandCoins, Sparkles } from 'lucide-react';
 import { Employee } from '../../types';
 import { useAppData } from '../../context/AppDataContext';
 import { formatINR } from '../../utils/utils';
@@ -19,11 +19,24 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
   onEdit,
   onAddNew,
 }) => {
-  const { employees, deleteEmployee, refreshAll } = useAppData();
+  const { employees, deleteEmployee, refreshAll, cleanDuplicateData } = useAppData();
   const [search, setSearch] = useState('');
   const [lendEmpId, setLendEmpId] = useState<string | null>(null);
+  const [cleaning, setCleaning] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleCleanDuplicates = async () => {
+    setCleaning(true);
+    try {
+      const stats = await cleanDuplicateData();
+      alert(`Cleaned duplicate and sample data successfully! (Cleaned ${stats.cleanedEmployees} workers, ${stats.cleanedAttendance} attendance records).`);
+    } catch (e: any) {
+      alert('Error cleaning duplicate data: ' + e.message);
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const filtered = employees.filter(
     (e) =>
@@ -82,6 +95,16 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleCleanDuplicates}
+              disabled={cleaning}
+              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
+              title="Clean duplicate and sample data"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>{cleaning ? 'Cleaning...' : 'Clean Duplicates'}</span>
+            </button>
+
             <button
               onClick={() => {
                 onClose();

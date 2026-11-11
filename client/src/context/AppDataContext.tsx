@@ -110,6 +110,12 @@ interface AppDataContextType {
 
   // System
   resetToSeedData: () => Promise<void>;
+  cleanDuplicateData: () => Promise<{
+    cleanedEmployees: number;
+    cleanedAttendance: number;
+    cleanedShifts: number;
+    cleanedTransactions: number;
+  }>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -130,6 +136,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const loadData = useCallback(async () => {
     try {
+      // Auto-purge any stale dummy sample data and remove duplicate records on load
+      await storageService.purgeDuplicateAndSampleData();
+
       const [
         emps,
         shfs,
@@ -1106,6 +1115,12 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await loadData();
   };
 
+  const cleanDuplicateData = async () => {
+    const stats = await storageService.purgeDuplicateAndSampleData();
+    await loadData();
+    return stats;
+  };
+
   return (
     <AppDataContext.Provider
       value={{
@@ -1149,6 +1164,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         markNotificationRead,
         markAllNotificationsRead,
         resetToSeedData,
+        cleanDuplicateData,
       }}
     >
       {children}
