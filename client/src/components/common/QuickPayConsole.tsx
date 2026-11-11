@@ -203,17 +203,17 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
               <div className="flex items-center gap-2 mt-2">
                 <button
                   type="button"
-                  onClick={() => setShiftsCount(Math.max(1, shiftsCount - 1))}
+                  onClick={() => setShiftsCount(Math.max(0, shiftsCount - 1))}
                   className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center"
                 >
                   -
                 </button>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   max="31"
                   value={shiftsCount}
-                  onChange={(e) => setShiftsCount(Math.max(1, Number(e.target.value)))}
+                  onChange={(e) => setShiftsCount(Math.max(0, Number(e.target.value) || 0))}
                   className="flex-1 py-1 px-2 text-center font-bold text-base bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
                 />
                 <button
@@ -248,7 +248,7 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
                   min="0"
                   step="0.5"
                   value={overtimeHours}
-                  onChange={(e) => setOvertimeHours(Math.max(0, Number(e.target.value)))}
+                  onChange={(e) => setOvertimeHours(Math.max(0, Number(e.target.value) || 0))}
                   className="flex-1 py-1 px-2 text-center font-bold text-base bg-slate-50 border border-slate-200 rounded-lg text-slate-900"
                 />
                 <button
