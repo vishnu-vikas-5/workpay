@@ -5,5 +5,6 @@ lib
 *.local
 firebase-debug.log
 firebase-debug.*.log
+.firebase
 .DS_Store
 
