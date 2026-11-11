@@ -7,15 +7,19 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format amount as Indian Rupees (INR)
- * e.g. 125000 -> ₹1,25,000.00 or ₹1,25,000
+ * e.g. 125000 -> ₹1,25,000 or ₹1,25,000.00
+ * Automatically displays paise (2 decimal places) when an amount has a fractional part (e.g. ₹101.88, ₹152.82).
  */
-export function formatINR(amount: number, showDecimals: boolean = false): string {
+export function formatINR(amount: number, forceDecimals?: boolean): string {
   if (isNaN(amount)) return '₹0';
+  const hasDecimals = amount % 1 !== 0;
+  const showDecimals = forceDecimals !== undefined ? forceDecimals : hasDecimals;
+
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     minimumFractionDigits: showDecimals ? 2 : 0,
-    maximumFractionDigits: showDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 

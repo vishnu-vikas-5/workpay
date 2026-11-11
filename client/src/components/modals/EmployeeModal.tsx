@@ -22,7 +22,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [upiId, setUpiId] = useState('');
-  const [shiftRate, setShiftRate] = useState<number>(800);
+  const [shiftRate, setShiftRate] = useState<string | number>(800);
   const [department, setDepartment] = useState('Warehouse & Logistics');
   const [designation, setDesignation] = useState('Shift Worker');
   const [email, setEmail] = useState('');
@@ -30,8 +30,9 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Computed overtime rate: shift rate divided by 8
-  const overtimeHourlyRate = Math.round((shiftRate / 8) * 100) / 100;
+  // Computed overtime rate: shift rate divided by 8 (with 2 decimal precision)
+  const numericShiftRate = typeof shiftRate === 'string' ? parseFloat(shiftRate) || 0 : shiftRate;
+  const overtimeHourlyRate = Math.round((numericShiftRate / 8) * 100) / 100;
 
   useEffect(() => {
     if (employeeToEdit) {
@@ -66,14 +67,15 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       if (!fullName.trim()) throw new Error('Please enter the employee full name.');
       if (!phone.trim()) throw new Error('Please enter the employee phone number.');
       if (!upiId.trim()) throw new Error('Please enter the UPI ID for payment.');
-      if (!shiftRate || shiftRate <= 0) throw new Error('Shift rate must be greater than zero.');
+      const numericRate = typeof shiftRate === 'string' ? parseFloat(shiftRate) : shiftRate;
+      if (isNaN(numericRate) || numericRate <= 0) throw new Error('Shift rate must be greater than zero.');
 
       // Auto-generate email if empty
       const cleanEmail =
         email.trim() ||
         `${fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}@workpay.io`;
 
-      const hourlyWage = Math.round((shiftRate / 8) * 100) / 100;
+      const hourlyWage = Math.round((numericRate / 8) * 100) / 100;
 
       if (employeeToEdit) {
         const updated = {
@@ -82,7 +84,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           phone: phone.trim(),
           email: cleanEmail,
           upiId: upiId.trim(),
-          shiftRate: Number(shiftRate),
+          shiftRate: numericRate,
           hourlyWage,
           standardWorkingHours: 8,
           overtimeMultiplier: 1.0,
@@ -99,7 +101,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           phone: phone.trim(),
           email: cleanEmail,
           upiId: upiId.trim(),
-          shiftRate: Number(shiftRate),
+          shiftRate: numericRate,
           hourlyWage,
           standardWorkingHours: 8,
           overtimeMultiplier: 1.0,
@@ -120,8 +122,8 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
@@ -218,10 +220,17 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
               </span>
               <input
                 type="number"
-                min="100"
-                step="50"
+                min="0"
+                step="any"
                 value={shiftRate}
-                onChange={(e) => setShiftRate(Number(e.target.value))}
+                placeholder="e.g. 800 or 815.50"
+                onChange={(e) => setShiftRate(e.target.value)}
+                onBlur={() => {
+                  const num = parseFloat(String(shiftRate));
+                  if (!isNaN(num) && num >= 0) {
+                    setShiftRate(Math.round(num * 100) / 100);
+                  }
+                }}
                 className="w-full pl-8 pr-4 py-2.5 bg-white border border-indigo-200 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 shadow-xs"
                 required
               />

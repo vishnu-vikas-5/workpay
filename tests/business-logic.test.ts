@@ -38,6 +38,30 @@ describe('WorkPay Business Logic & Overtime Engine', () => {
     assert.strictEqual(higherRateShift.overtimeRate, 150);
     assert.strictEqual(higherRateShift.overtimeWages, 450);
     assert.strictEqual(higherRateShift.totalPayable, 1650);
+
+    // Scenario 4: User custom rate ₹815 (OT Rate = 815 / 8 = ₹101.88/hr)
+    // 9.25 hours worked (8h standard + 1.25h OT @ ₹101.88/hr)
+    // Overtime wages = 1.25 * 101.88 = ₹127.35
+    // Total payable = 815 + 127.35 = ₹942.35
+    const customRateDecimalOt = calculateWagesFromShiftRate(9.25, 815, true);
+    assert.strictEqual(customRateDecimalOt.regularHours, 8);
+    assert.strictEqual(customRateDecimalOt.overtimeHours, 1.25);
+    assert.strictEqual(customRateDecimalOt.regularWages, 815);
+    assert.strictEqual(customRateDecimalOt.overtimeRate, 101.88);
+    assert.strictEqual(customRateDecimalOt.overtimeWages, 127.35);
+    assert.strictEqual(customRateDecimalOt.totalPayable, 942.35);
+
+    // Scenario 5: Decimal shift rate ₹815.50 (OT Rate = 815.50 / 8 = ₹101.94/hr)
+    // 10.75 hours worked (8h standard + 2.75h OT @ ₹101.94/hr)
+    // Overtime wages = 2.75 * 101.94 = ₹280.33
+    // Total payable = 815.50 + 280.33 = ₹1,095.83
+    const decimalShiftRateShift = calculateWagesFromShiftRate(10.75, 815.5, true);
+    assert.strictEqual(decimalShiftRateShift.regularHours, 8);
+    assert.strictEqual(decimalShiftRateShift.overtimeHours, 2.75);
+    assert.strictEqual(decimalShiftRateShift.regularWages, 815.5);
+    assert.strictEqual(decimalShiftRateShift.overtimeRate, 101.94);
+    assert.strictEqual(decimalShiftRateShift.overtimeWages, 280.33);
+    assert.strictEqual(decimalShiftRateShift.totalPayable, 1095.83);
   });
   it('correctly calculates shift duration for standard daytime shift', () => {
     // 09:00 to 17:00 with 30 min break -> 8h gross - 0.5h = 7.5 hours

@@ -34,6 +34,7 @@ export interface Employee {
   overtimeMultiplier: number; // default 1.0 (overtime rate = shiftRate / 8)
   upiId?: string; // e.g. "name@okhdfcbank" or "9876543210@paytm"
   bankAccount?: BankAccountDetails;
+  advanceBalance?: number; // Total outstanding lent / advance money in ₹
   status: 'active' | 'inactive';
   avatar?: string;
   notes?: string;
@@ -84,6 +85,11 @@ export interface Attendance {
   verificationMethod: AttendanceVerification;
   notes?: string;
   createdAt: string;
+  shiftsCount?: number;
+  shiftRate?: number;
+  isPaid?: boolean;
+  paidAt?: string;
+  paidTransactionId?: string;
 }
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -199,7 +205,23 @@ export interface PaymentTransaction {
   overtimeRate?: number;
   shiftPay?: number;
   overtimePay?: number;
+  grossPay?: number;
+  advanceDeducted?: number; // Advance / loan amount deducted from this wage payment
+  remainingAdvanceBalance?: number; // Remaining advance balance after this deduction
   employeePhone?: string;
+}
+
+export interface AdvanceRecord {
+  id: string; // e.g. "ADV-1715421234"
+  employeeId: string;
+  employeeName: string;
+  amount: number; // in INR
+  date: string; // YYYY-MM-DD
+  type: 'give' | 'deduct' | 'repay'; // 'give' = lent, 'deduct' = deducted from wage, 'repay' = returned directly
+  notes?: string;
+  paymentMethod?: 'cash' | 'upi';
+  referenceId?: string; // payment transaction ID if deducted
+  createdAt: string;
 }
 
 export interface NotificationItem {

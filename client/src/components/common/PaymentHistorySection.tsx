@@ -37,11 +37,13 @@ export const PaymentHistorySection: React.FC = () => {
   }, [transactions, searchTerm]);
 
   const stats = useMemo(() => {
-    const totalAmount = transactions
-      .filter((t) => t.status === 'Successful')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalShifts = transactions.reduce((sum, t) => sum + (t.shiftsCount || 1), 0);
-    const totalOT = transactions.reduce((sum, t) => sum + (t.overtimeHours || 0), 0);
+    const totalAmount = Math.round(
+      transactions
+        .filter((t) => t.status === 'Successful')
+        .reduce((sum, t) => sum + (t.amount || 0), 0) * 100
+    ) / 100;
+    const totalShifts = Math.round(transactions.reduce((sum, t) => sum + (t.shiftsCount || 1), 0) * 10) / 10;
+    const totalOT = Math.round(transactions.reduce((sum, t) => sum + (t.overtimeHours || 0), 0) * 100) / 100;
     return {
       totalAmount,
       totalCount: transactions.length,
@@ -72,7 +74,10 @@ export const PaymentHistorySection: React.FC = () => {
       'Shift Rate (INR)': tx.shiftRate ?? 'N/A',
       'Overtime Hours': tx.overtimeHours ?? 0,
       'Overtime Rate (INR/hr)': tx.overtimeRate ?? 'N/A',
-      'Total Paid (INR)': tx.amount,
+      'Gross Pay (INR)': tx.grossPay ?? tx.amount,
+      'Advance Deducted (INR)': tx.advanceDeducted ?? 0,
+      'Net Paid (INR)': tx.amount,
+      'Remaining Loan Balance (INR)': tx.remainingAdvanceBalance ?? 0,
       'Payment Status': tx.status,
       'Date & Time': new Date(tx.initiatedAt).toLocaleString('en-IN'),
     }));
@@ -80,7 +85,7 @@ export const PaymentHistorySection: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-6 space-y-5">
+    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-3.5 sm:p-6 space-y-4 sm:space-y-5">
       {/* Header and stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div className="flex items-center gap-3">
@@ -153,7 +158,7 @@ export const PaymentHistorySection: React.FC = () => {
         />
       </div>
 
-      {/* Transactions Table */}
+      {/* Transactions Table / Cards */}
       {filtered.length === 0 ? (
         <div className="py-12 text-center text-slate-400">
           <History className="w-10 h-10 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
@@ -163,114 +168,175 @@ export const PaymentHistorySection: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-3.5">Date & Time</th>
-                <th className="py-3 px-3.5">Employee</th>
-                <th className="py-3 px-3.5">UPI ID (VPA)</th>
-                <th className="py-3 px-3.5">Shift & Overtime Breakdown</th>
-                <th className="py-3 px-3.5">Amount</th>
-                <th className="py-3 px-3.5">Provider Ref / UTR</th>
-                <th className="py-3 px-3.5">Status</th>
-                <th className="py-3 px-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.map((tx) => {
-                const isCopied = copiedId === tx.id;
-                const shiftBreakdown = tx.notes || (
-                  tx.shiftsCount
-                    ? `${tx.shiftsCount} shift${tx.shiftsCount > 1 ? 's' : ''} (₹${tx.shiftRate || 800}) + ${tx.overtimeHours || 0}h OT (₹${tx.overtimeRate || 100}/hr)`
-                    : '1 Shift + Overtime'
-                );
+        <>
+          {/* Mobile View: Clean Card List */}
+          <div className="block sm:hidden space-y-3">
+            {filtered.map((tx) => (
+              <div
+                key={tx.id}
+                className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/90 space-y-2.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+                      {tx.employeeName?.slice(0, 2).toUpperCase() || 'WP'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">{tx.employeeName}</p>
+                      <p className="text-[10px] text-slate-400">{formatDateTime(tx.initiatedAt)}</p>
+                    </div>
+                  </div>
+                  <span className="font-black text-slate-900 text-sm">
+                    {formatINR(tx.amount, true)}
+                  </span>
+                </div>
 
-                return (
-                  <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-slate-600 font-medium">
-                      {formatDateTime(tx.initiatedAt)}
-                    </td>
+                <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-200/70 text-[11px]">
+                  <span className="font-mono text-brand-700 font-semibold bg-white px-2 py-0.5 rounded border border-slate-200">
+                    {tx.destination?.upiId}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>Paid via UPI</span>
+                  </span>
+                </div>
 
-                    <td className="py-3.5 px-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-[11px]">
-                          {tx.employeeName?.slice(0, 2).toUpperCase() || 'WP'}
+                <div className="flex items-center justify-between gap-2 pt-1 text-xs">
+                  <span className="text-[11px] text-slate-600 font-medium">
+                    {tx.notes || `${tx.shiftsCount || 1} shift + ${tx.overtimeHours || 0}h OT`}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleDownload(tx)}
+                      className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors"
+                      title="Download Payslip PDF"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>Slip</span>
+                    </button>
+                    <button
+                      onClick={() => deleteTransaction(tx.id)}
+                      className="p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                      title="Delete Record"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop/Tablet View: Table */}
+          <div className="hidden sm:block overflow-x-auto rounded-2xl border border-slate-200/80">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-3.5">Date & Time</th>
+                  <th className="py-3 px-3.5">Employee</th>
+                  <th className="py-3 px-3.5">UPI ID (VPA)</th>
+                  <th className="py-3 px-3.5">Shift & Overtime Breakdown</th>
+                  <th className="py-3 px-3.5">Amount</th>
+                  <th className="py-3 px-3.5">Provider Ref / UTR</th>
+                  <th className="py-3 px-3.5">Status</th>
+                  <th className="py-3 px-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((tx) => {
+                  const isCopied = copiedId === tx.id;
+                  const shiftBreakdown =
+                    tx.notes ||
+                    (tx.shiftsCount
+                      ? `${tx.shiftsCount} shift${tx.shiftsCount > 1 ? 's' : ''} (₹${tx.shiftRate || 800}) + ${tx.overtimeHours || 0}h OT (₹${tx.overtimeRate || 100}/hr)`
+                      : '1 Shift + Overtime');
+
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-slate-600 font-medium">
+                        {formatDateTime(tx.initiatedAt)}
+                      </td>
+
+                      <td className="py-3.5 px-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-[11px]">
+                            {tx.employeeName?.slice(0, 2).toUpperCase() || 'WP'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{tx.employeeName}</p>
+                            {tx.employeePhone && (
+                              <p className="text-[10px] text-slate-400 font-mono">{tx.employeePhone}</p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{tx.employeeName}</p>
-                          {tx.employeePhone && (
-                            <p className="text-[10px] text-slate-400 font-mono">{tx.employeePhone}</p>
-                          )}
+                      </td>
+
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md font-mono text-[11px] text-slate-800 font-semibold border border-slate-200">
+                          <Smartphone className="w-3 h-3 text-brand-600" />
+                          <span>{tx.destination?.upiId || `${tx.employeePhone}@upi`}</span>
+                          <button
+                            onClick={() => handleCopy(tx.destination?.upiId || '', tx.id)}
+                            className="text-slate-400 hover:text-slate-700"
+                            title="Copy UPI ID"
+                          >
+                            {isCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                          </button>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md font-mono text-[11px] text-slate-800 font-semibold border border-slate-200">
-                        <Smartphone className="w-3 h-3 text-brand-600" />
-                        <span>{tx.destination?.upiId || `${tx.employeePhone}@upi`}</span>
-                        <button
-                          onClick={() => handleCopy(tx.destination?.upiId || '', tx.id)}
-                          className="text-slate-400 hover:text-slate-700"
-                          title="Copy UPI ID"
-                        >
-                          {isCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      </div>
-                    </td>
+                      <td className="py-3.5 px-3.5">
+                        <span className="font-semibold text-slate-700 bg-indigo-50/70 border border-indigo-100 text-[11px] px-2 py-0.5 rounded-md inline-block">
+                          {shiftBreakdown}
+                        </span>
+                      </td>
 
-                    <td className="py-3.5 px-3.5">
-                      <span className="font-semibold text-slate-700 bg-indigo-50/70 border border-indigo-100 text-[11px] px-2 py-0.5 rounded-md inline-block">
-                        {shiftBreakdown}
-                      </span>
-                    </td>
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
+                        <span className="font-black text-sm text-slate-900">
+                          {formatINR(tx.amount, true)}
+                        </span>
+                      </td>
 
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
-                      <span className="font-black text-sm text-slate-900">
-                        {formatINR(tx.amount, true)}
-                      </span>
-                    </td>
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
+                        <span className="font-mono text-[11px] font-semibold text-slate-500">
+                          {tx.providerReferenceId || tx.id}
+                        </span>
+                      </td>
 
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
-                      <span className="font-mono text-[11px] font-semibold text-slate-500">
-                        {tx.providerReferenceId || tx.id}
-                      </span>
-                    </td>
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Paid via UPI</span>
+                        </span>
+                      </td>
 
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Paid via UPI</span>
-                      </span>
-                    </td>
+                      <td className="py-3.5 px-3.5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleDownload(tx)}
+                            className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors"
+                            title="Download Payslip PDF"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>Slip</span>
+                          </button>
 
-                    <td className="py-3.5 px-3.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleDownload(tx)}
-                          className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors"
-                          title="Download Payslip PDF"
-                        >
-                          <FileText className="w-3 h-3" />
-                          <span>Slip</span>
-                        </button>
-
-                        <button
-                          onClick={() => deleteTransaction(tx.id)}
-                          className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                          <button
+                            onClick={() => deleteTransaction(tx.id)}
+                            className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Delete Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

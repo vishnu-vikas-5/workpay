@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { X, Copy, Check, ExternalLink, Smartphone, CheckCircle2 } from 'lucide-react';
 import { generateUpiIntentUri, getAppSpecificUpiLinks } from '../../utils/upiUtils';
 import { formatINR } from '../../utils/utils';
+import { GooglePayLogo, PhonePeLogo, PaytmLogo } from './PaymentBrandIcons';
 
 interface UpiQrModalProps {
   isOpen: boolean;
@@ -51,8 +52,8 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 text-center animate-in fade-in zoom-in-95 max-h-[95vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs">
+      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-6 text-center animate-in fade-in zoom-in-95 max-h-[95vh] overflow-y-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
@@ -114,25 +115,28 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
           <span>Open Installed UPI App on Device</span>
         </button>
 
-        {/* Specific App Quick Deep Links */}
+        {/* Specific App Quick Deep Links with Brand Logos */}
         <div className="grid grid-cols-3 gap-2 mb-3">
           <a
             href={appLinks.gpay}
-            className="px-2 py-2 text-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="p-2 text-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all flex flex-col items-center gap-1 group shadow-2xs"
           >
-            Google Pay
+            <GooglePayLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
+            <span className="truncate w-full text-[11px] font-bold">Google Pay</span>
           </a>
           <a
             href={appLinks.phonepe}
-            className="px-2 py-2 text-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="p-2 text-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all flex flex-col items-center gap-1 group shadow-2xs"
           >
-            PhonePe
+            <PhonePeLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
+            <span className="truncate w-full text-[11px] font-bold">PhonePe</span>
           </a>
           <a
             href={appLinks.paytm}
-            className="px-2 py-2 text-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="p-2 text-center rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all flex flex-col items-center gap-1 group shadow-2xs"
           >
-            Paytm
+            <PaytmLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
+            <span className="truncate w-full text-[11px] font-bold">Paytm</span>
           </a>
         </div>
 

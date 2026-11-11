@@ -10,6 +10,7 @@ import {
   AuditLog,
   Department,
   PayrollPeriodType,
+  AdvanceRecord,
 } from '../types';
 import { storageService } from '../services/storageService';
 import { calculateDurationHours, calculateWages, checkShiftOverlap } from '../utils/overtimeCalculator';
@@ -23,6 +24,7 @@ interface AppDataContextType {
   overtimeRequests: OvertimeRequest[];
   payrollRecords: PayrollRecord[];
   transactions: PaymentTransaction[];
+  advances: AdvanceRecord[];
   notifications: NotificationItem[];
   auditLogs: AuditLog[];
   departments: Department[];
@@ -35,6 +37,22 @@ interface AppDataContextType {
   deactivateEmployee: (id: string) => Promise<void>;
   deleteEmployee: (id: string) => Promise<void>;
 
+  // Lending / Advance (Khata) Actions
+  lendMoney: (params: {
+    employeeId: string;
+    amount: number;
+    date?: string;
+    notes?: string;
+    paymentMethod?: 'cash' | 'upi';
+  }) => Promise<AdvanceRecord>;
+  repayAdvance: (params: {
+    employeeId: string;
+    amount: number;
+    date?: string;
+    notes?: string;
+  }) => Promise<AdvanceRecord>;
+  deleteAdvance: (id: string) => Promise<void>;
+
   // Shift Actions
   assignShift: (shiftData: Omit<Shift, 'id' | 'createdAt'>) => Promise<{ success: boolean; shift?: Shift; error?: string }>;
   assignBulkShifts: (employeeIds: string[], baseShift: Omit<Shift, 'id' | 'employeeId' | 'employeeName' | 'department' | 'createdAt'>) => Promise<{ success: boolean; count: number; error?: string }>;
@@ -45,6 +63,20 @@ interface AppDataContextType {
   clockInEmployee: (employeeId: string, shiftId?: string, time?: string) => Promise<void>;
   clockOutEmployee: (attendanceId: string, clockOutTime?: string, breakMinutes?: number) => Promise<void>;
   markAttendanceAbsent: (employeeId: string, date: string, shiftId?: string, reason?: string) => Promise<void>;
+  markDailyAttendance: (params: {
+    employeeId: string;
+    date: string;
+    status: 'present' | 'absent' | 'half-day';
+    overtimeHours?: number;
+  }) => Promise<Attendance>;
+  markAllAttendance: (date: string, status: 'present' | 'absent') => Promise<void>;
+  settleWeeklyAttendance: (params: {
+    employeeId: string;
+    startDate: string;
+    endDate: string;
+    transactionId: string;
+    advanceDeducted?: number;
+  }) => Promise<void>;
 
   // Overtime Actions
   submitOvertimeRequest: (otData: Omit<OvertimeRequest, 'id' | 'createdAt'>) => Promise<void>;
@@ -66,6 +98,7 @@ interface AppDataContextType {
     shiftPay: number;
     overtimePay: number;
     totalPayable: number;
+    advanceDeducted?: number;
     paymentMethod?: 'upi_intent_manual' | 'razorpayx_upi';
     providerReferenceId?: string;
   }) => Promise<PaymentTransaction>;
@@ -89,6 +122,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [overtimeRequests, setOvertimeRequests] = useState<OvertimeRequest[]>([]);
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
+  const [advances, setAdvances] = useState<AdvanceRecord[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -106,6 +140,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         notifs,
         audits,
         depts,
+        advs,
       ] = await Promise.all([
         storageService.getEmployees(),
         storageService.getShifts(),
@@ -116,6 +151,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         storageService.getNotifications(),
         storageService.getAuditLogs(),
         storageService.getDepartments(),
+        storageService.getAdvances(),
       ]);
 
       setEmployees(emps);
@@ -124,6 +160,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setOvertimeRequests(ots);
       setPayrollRecords(payrolls);
       setTransactions(txs);
+      setAdvances(advs);
       setNotifications(notifs);
       setAuditLogs(audits);
       setDepartments(depts);
@@ -202,6 +239,117 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.role || 'admin',
       { id }
     );
+    await loadData();
+  };
+
+  // LENDING / ADVANCE ACTIONS
+  const lendMoney = async (params: {
+    employeeId: string;
+    amount: number;
+    date?: string;
+    notes?: string;
+    paymentMethod?: 'cash' | 'upi';
+  }): Promise<AdvanceRecord> => {
+    const targetEmp = employees.find((e) => e.id === params.employeeId);
+    if (!targetEmp) throw new Error('Employee not found');
+
+    const cleanAmount = Math.round(Number(params.amount) * 100) / 100;
+    if (isNaN(cleanAmount) || cleanAmount <= 0) throw new Error('Loan amount must be greater than zero');
+
+    const advRecord: AdvanceRecord = {
+      id: `ADV-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      employeeId: targetEmp.id,
+      employeeName: targetEmp.fullName,
+      amount: cleanAmount,
+      date: params.date || new Date().toISOString().split('T')[0],
+      type: 'give',
+      notes: params.notes?.trim() || 'Lent Money / Cash Advance',
+      paymentMethod: params.paymentMethod || 'cash',
+      createdAt: new Date().toISOString(),
+    };
+
+    const currentBal = targetEmp.advanceBalance || 0;
+    const newBal = Math.round((currentBal + cleanAmount) * 100) / 100;
+    const updatedEmp: Employee = {
+      ...targetEmp,
+      advanceBalance: newBal,
+    };
+
+    await storageService.saveAdvance(advRecord);
+    await storageService.saveEmployee(updatedEmp);
+    await storageService.logAction(
+      'LEND_MONEY',
+      'employee',
+      targetEmp.id,
+      user?.name || 'Admin',
+      user?.role || 'admin',
+      {
+        employee: targetEmp.fullName,
+        amount: cleanAmount,
+        notes: advRecord.notes,
+        newBalance: newBal,
+      }
+    );
+
+    await loadData();
+    return advRecord;
+  };
+
+  const repayAdvance = async (params: {
+    employeeId: string;
+    amount: number;
+    date?: string;
+    notes?: string;
+  }): Promise<AdvanceRecord> => {
+    const targetEmp = employees.find((e) => e.id === params.employeeId);
+    if (!targetEmp) throw new Error('Employee not found');
+
+    const cleanAmount = Math.round(Number(params.amount) * 100) / 100;
+    if (isNaN(cleanAmount) || cleanAmount <= 0) throw new Error('Repayment amount must be greater than zero');
+
+    const currentBal = targetEmp.advanceBalance || 0;
+    const actualRepaid = Math.min(currentBal, cleanAmount);
+    const newBal = Math.max(0, Math.round((currentBal - actualRepaid) * 100) / 100);
+
+    const advRecord: AdvanceRecord = {
+      id: `ADV-REP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      employeeId: targetEmp.id,
+      employeeName: targetEmp.fullName,
+      amount: actualRepaid,
+      date: params.date || new Date().toISOString().split('T')[0],
+      type: 'repay',
+      notes: params.notes?.trim() || 'Cash Repayment by Worker',
+      paymentMethod: 'cash',
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedEmp: Employee = {
+      ...targetEmp,
+      advanceBalance: newBal,
+    };
+
+    await storageService.saveAdvance(advRecord);
+    await storageService.saveEmployee(updatedEmp);
+    await storageService.logAction(
+      'REPAY_ADVANCE',
+      'employee',
+      targetEmp.id,
+      user?.name || 'Admin',
+      user?.role || 'admin',
+      {
+        employee: targetEmp.fullName,
+        amount: actualRepaid,
+        notes: advRecord.notes,
+        newBalance: newBal,
+      }
+    );
+
+    await loadData();
+    return advRecord;
+  };
+
+  const deleteAdvance = async (id: string) => {
+    await storageService.deleteAdvance(id);
     await loadData();
   };
 
@@ -500,6 +648,135 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await loadData();
   };
 
+  const markDailyAttendance = async (params: {
+    employeeId: string;
+    date: string;
+    status: 'present' | 'absent' | 'half-day';
+    overtimeHours?: number;
+  }): Promise<Attendance> => {
+    const emp = employees.find((e) => e.id === params.employeeId);
+    if (!emp) throw new Error('Employee not found');
+
+    const shiftRate = emp.shiftRate || emp.hourlyWage * 8 || 800;
+    const shiftsCount = params.status === 'present' ? 1 : params.status === 'half-day' ? 0.5 : 0;
+    const overtimeHours = Math.max(0, params.overtimeHours ?? 0);
+
+    const existing = attendance.find(
+      (a) => a.employeeId === params.employeeId && a.date === params.date
+    );
+
+    const record: Attendance = {
+      id: existing?.id || `att-${params.date}-${params.employeeId}`,
+      employeeId: emp.id,
+      employeeName: emp.fullName,
+      department: emp.department || 'Operations',
+      date: params.date,
+      clockInTime: '09:00',
+      clockOutTime: '17:00',
+      breakDurationMinutes: 0,
+      workingDurationHours: shiftsCount * 8,
+      overtimeHours,
+      shiftsCount,
+      shiftRate,
+      status: params.status,
+      recordedBy: `${user?.name || 'Admin'} (${user?.role || 'admin'})`,
+      verificationMethod: 'manual',
+      isPaid: existing?.isPaid || false,
+      paidAt: existing?.paidAt,
+      paidTransactionId: existing?.paidTransactionId,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+    };
+
+    await storageService.saveAttendance(record);
+    await loadData();
+    return record;
+  };
+
+  const markAllAttendance = async (date: string, status: 'present' | 'absent') => {
+    for (const emp of employees) {
+      const shiftRate = emp.shiftRate || emp.hourlyWage * 8 || 800;
+      const shiftsCount = status === 'present' ? 1 : 0;
+      const existing = attendance.find((a) => a.employeeId === emp.id && a.date === date);
+
+      const record: Attendance = {
+        id: existing?.id || `att-${date}-${emp.id}`,
+        employeeId: emp.id,
+        employeeName: emp.fullName,
+        department: emp.department || 'Operations',
+        date,
+        clockInTime: '09:00',
+        clockOutTime: '17:00',
+        breakDurationMinutes: 0,
+        workingDurationHours: shiftsCount * 8,
+        overtimeHours: existing?.overtimeHours || 0,
+        shiftsCount,
+        shiftRate,
+        status,
+        recordedBy: `${user?.name || 'Admin'} (${user?.role || 'admin'})`,
+        verificationMethod: 'manual',
+        isPaid: existing?.isPaid || false,
+        paidAt: existing?.paidAt,
+        paidTransactionId: existing?.paidTransactionId,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+      };
+      await storageService.saveAttendance(record);
+    }
+    await loadData();
+  };
+
+  const settleWeeklyAttendance = async (params: {
+    employeeId: string;
+    startDate: string;
+    endDate: string;
+    transactionId: string;
+    advanceDeducted?: number;
+  }) => {
+    const records = attendance.filter(
+      (a) =>
+        a.employeeId === params.employeeId &&
+        a.date >= params.startDate &&
+        a.date <= params.endDate
+    );
+    for (const a of records) {
+      await storageService.saveAttendance({
+        ...a,
+        isPaid: true,
+        paidAt: new Date().toISOString(),
+        paidTransactionId: params.transactionId,
+      });
+    }
+
+    if (params.advanceDeducted && params.advanceDeducted > 0) {
+      const targetEmp = employees.find((e) => e.id === params.employeeId);
+      if (targetEmp) {
+        const cleanDeducted = Math.round(Number(params.advanceDeducted) * 100) / 100;
+        const currentBal = targetEmp.advanceBalance || 0;
+        const newBal = Math.max(0, Math.round((currentBal - cleanDeducted) * 100) / 100);
+
+        await storageService.saveEmployee({
+          ...targetEmp,
+          advanceBalance: newBal,
+        });
+
+        const advRecord: AdvanceRecord = {
+          id: `ADV-DED-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          employeeId: targetEmp.id,
+          employeeName: targetEmp.fullName,
+          amount: cleanDeducted,
+          date: new Date().toISOString().split('T')[0],
+          type: 'deduct',
+          notes: `Deducted from Weekly Payout (${params.transactionId})`,
+          paymentMethod: 'upi',
+          referenceId: params.transactionId,
+          createdAt: new Date().toISOString(),
+        };
+        await storageService.saveAdvance(advRecord);
+      }
+    }
+
+    await loadData();
+  };
+
   // OVERTIME
   const submitOvertimeRequest = async (otData: Omit<OvertimeRequest, 'id' | 'createdAt'>) => {
     const newId = `ot-${Date.now()}`;
@@ -715,11 +992,18 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     shiftPay: number;
     overtimePay: number;
     totalPayable: number;
+    advanceDeducted?: number;
     paymentMethod?: 'upi_intent_manual' | 'razorpayx_upi';
     providerReferenceId?: string;
   }): Promise<PaymentTransaction> => {
     const txId = `TXN-WP-${Date.now().toString().slice(-8)}`;
     const utr = data.providerReferenceId || `UTR${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+
+    const advanceDeducted = Math.max(0, Math.round((data.advanceDeducted || 0) * 100) / 100);
+    const grossPay = Math.round(((data.shiftPay || 0) + (data.overtimePay || 0)) * 100) / 100;
+    const currentBal = data.employee.advanceBalance || 0;
+    const remainingAdvanceBalance = Math.max(0, Math.round((currentBal - advanceDeducted) * 100) / 100);
+
     const transaction: PaymentTransaction = {
       id: txId,
       payrollId: `pay-quick-${Date.now()}`,
@@ -747,10 +1031,38 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       overtimeRate: data.overtimeRate,
       shiftPay: data.shiftPay,
       overtimePay: data.overtimePay,
-      notes: `${data.shiftsCount} shift${data.shiftsCount > 1 ? 's' : ''} (₹${data.shiftRate}) + ${data.overtimeHours}h OT (₹${data.overtimeRate}/hr)`,
+      grossPay,
+      advanceDeducted,
+      remainingAdvanceBalance,
+      notes: advanceDeducted > 0
+        ? `${data.shiftsCount} shift (${data.shiftRate}) + ${data.overtimeHours}h OT — Less: ₹${advanceDeducted} Advance (Bal: ₹${remainingAdvanceBalance})`
+        : `${data.shiftsCount} shift${data.shiftsCount > 1 ? 's' : ''} (₹${data.shiftRate}) + ${data.overtimeHours}h OT (₹${data.overtimeRate}/hr)`,
     };
 
     await storageService.saveTransaction(transaction);
+
+    // If advance was deducted, record ledger entry and update employee's remaining advance
+    if (advanceDeducted > 0) {
+      const advRecord: AdvanceRecord = {
+        id: `ADV-DED-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        employeeId: data.employee.id,
+        employeeName: data.employee.fullName,
+        amount: advanceDeducted,
+        date: new Date().toISOString().split('T')[0],
+        type: 'deduct',
+        notes: `Deducted from Shift Salary (${txId})`,
+        paymentMethod: 'upi',
+        referenceId: txId,
+        createdAt: new Date().toISOString(),
+      };
+      await storageService.saveAdvance(advRecord);
+
+      await storageService.saveEmployee({
+        ...data.employee,
+        advanceBalance: remainingAdvanceBalance,
+      });
+    }
+
     await storageService.logAction(
       'QUICK_UPI_PAYOUT',
       'payment',
@@ -760,6 +1072,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       {
         employee: data.employee.fullName,
         upiId: data.employee.upiId,
+        grossPay,
+        advanceDeducted,
         amount: data.totalPayable,
         utr,
       }
@@ -801,6 +1115,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         overtimeRequests,
         payrollRecords,
         transactions,
+        advances,
         notifications,
         auditLogs,
         departments,
@@ -810,6 +1125,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateEmployee,
         deactivateEmployee,
         deleteEmployee,
+        lendMoney,
+        repayAdvance,
+        deleteAdvance,
         assignShift,
         assignBulkShifts,
         updateShift,
@@ -817,6 +1135,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         clockInEmployee,
         clockOutEmployee,
         markAttendanceAbsent,
+        markDailyAttendance,
+        markAllAttendance,
+        settleWeeklyAttendance,
         submitOvertimeRequest,
         approveOvertime,
         rejectOvertime,

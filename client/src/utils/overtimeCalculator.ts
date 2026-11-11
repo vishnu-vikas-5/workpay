@@ -69,13 +69,13 @@ export function calculateWagesFromShiftRate(
 
   const safeActual = Math.max(0, actualHours);
   const regularHours = Math.min(safeActual, standardHours);
-  const rawOvertimeHours = Math.max(0, safeActual - standardHours);
+  const rawOvertimeHours = Math.max(0, Math.round((safeActual - standardHours) * 100) / 100);
   const payableOvertimeHours = isOvertimeApproved ? rawOvertimeHours : 0;
 
   // Regular wages: proportional if partial shift (<8h), full shiftRate if >=8h
-  const regularWages = Math.round((regularHours / standardHours) * safeShiftRate);
-  const overtimeWages = Math.round(payableOvertimeHours * hourlyOvertimeRate);
-  const totalPayable = regularWages + overtimeWages;
+  const regularWages = Math.round(((regularHours / standardHours) * safeShiftRate) * 100) / 100;
+  const overtimeWages = Math.round((payableOvertimeHours * hourlyOvertimeRate) * 100) / 100;
+  const totalPayable = Math.round((regularWages + overtimeWages) * 100) / 100;
 
   return {
     regularHours,

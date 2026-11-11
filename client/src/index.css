@@ -8,10 +8,51 @@
     --foreground: 222.2 84% 4.9%;
   }
 
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
+
+  #root {
+    width: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  button, a, select, input {
+    touch-action: manipulation;
+  }
+}
+
+/* Safe area insets for notches and home indicators */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 12px), 12px);
+}
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 0px);
 }
 
 /* Custom scrollbar */

@@ -9,6 +9,7 @@ import {
   AuditLog,
   Department,
   User,
+  AdvanceRecord,
 } from '../types';
 import {
   INITIAL_EMPLOYEES,
@@ -43,6 +44,7 @@ const KEYS = {
   AUDIT_LOGS: 'workpay_audit_logs',
   DEPARTMENTS: 'workpay_departments',
   USERS: 'workpay_users',
+  ADVANCES: 'workpay_advances',
 };
 
 function getLocal<T>(key: string, defaultVal: T): T {
@@ -403,6 +405,23 @@ export const storageService = {
   // DEPARTMENTS
   getDepartments: async (): Promise<Department[]> => {
     return getLocal<Department[]>(KEYS.DEPARTMENTS, INITIAL_DEPARTMENTS);
+  },
+
+  // ADVANCES / LENDING
+  getAdvances: async (): Promise<AdvanceRecord[]> => {
+    return getLocal<AdvanceRecord[]>(KEYS.ADVANCES, []);
+  },
+
+  saveAdvance: async (adv: AdvanceRecord): Promise<void> => {
+    const list = await storageService.getAdvances();
+    const updated = [adv, ...list];
+    setLocal(KEYS.ADVANCES, updated);
+  },
+
+  deleteAdvance: async (id: string): Promise<void> => {
+    const list = await storageService.getAdvances();
+    const updated = list.filter((a) => a.id !== id);
+    setLocal(KEYS.ADVANCES, updated);
   },
 };
 

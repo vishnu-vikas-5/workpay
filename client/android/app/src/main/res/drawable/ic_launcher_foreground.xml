@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportHeight="108"
+    android:viewportWidth="108">
+    <!-- Main Card Body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,36 L76,36 C79.5,36 82,38.5 82,42 L82,68 C82,71.5 79.5,74 76,74 L32,74 C28.5,74 26,71.5 26,68 L26,42 C26,38.5 28.5,36 32,36 Z" />
+    
+    <!-- Card Stripe -->
+    <path
+        android:fillColor="#312E81"
+        android:pathData="M26,44 L82,44 L82,50 L26,50 Z" />
+
+    <!-- Card Smart Chip -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M32,55 L42,55 C42.6,55 43,55.4 43,56 L43,64 C43,64.6 42.6,65 42,65 L32,65 C31.4,65 31,64.6 31,64 L31,56 C31,55.4 31.4,55 32,55 Z" />
+
+    <!-- Instant Payment Lightning Circle Badge -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M67,49 C74.2,49 80,54.8 80,62 C80,69.2 74.2,75 67,75 C59.8,75 54,69.2 54,62 C54,54.8 59.8,49 67,49 Z" />
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M67,51 C73.1,51 78,55.9 78,62 C78,68.1 73.1,73 67,73 C60.9,73 56,68.1 56,62 C56,55.9 60.9,51 67,51 Z" />
+    
+    <!-- Lightning Bolt -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,54 L62,63 L66.5,63 L64.5,70 L72,61 L67.5,61 Z" />
+</vector>
+

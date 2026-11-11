@@ -119,8 +119,8 @@ export function generatePaymentReceiptPDF(
   const otRate = transaction.overtimeRate || Math.round((shiftRate / 8) * 100) / 100;
   const shiftsCount = transaction.shiftsCount ?? 1;
   const otHours = transaction.overtimeHours ?? 0;
-  const regularWages = transaction.shiftPay ?? (shiftsCount * shiftRate);
-  const otWages = transaction.overtimePay ?? Math.round(otHours * otRate);
+  const regularWages = transaction.shiftPay ?? Math.round(shiftsCount * shiftRate * 100) / 100;
+  const otWages = transaction.overtimePay ?? Math.round(otHours * otRate * 100) / 100;
 
   const tableBody = isQuickPay
     ? [
@@ -136,6 +136,16 @@ export function generatePaymentReceiptPDF(
           `${formatINR(otRate)} / hr`,
           formatINR(otWages),
         ],
+        ...(transaction.advanceDeducted && transaction.advanceDeducted > 0
+          ? [
+              [
+                'Less: Loan / Advance Deduction',
+                `Remaining Loan: ${formatINR(transaction.remainingAdvanceBalance || 0)}`,
+                'Deducted from Salary',
+                '- ' + formatINR(transaction.advanceDeducted),
+              ],
+            ]
+          : []),
       ]
     : [
         [

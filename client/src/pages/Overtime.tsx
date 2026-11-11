@@ -325,9 +325,9 @@ export const Overtime: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  step="0.5"
+                  step="any"
                   min="0"
-                  max="12"
+                  max="24"
                   value={adjustedHoursInput}
                   onChange={(e) => setAdjustedHoursInput(Number(e.target.value))}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl"
