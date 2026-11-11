@@ -77,6 +77,7 @@ interface AppDataContextType {
     transactionId: string;
     advanceDeducted?: number;
   }) => Promise<void>;
+  deleteAttendance: (id: string) => Promise<void>;
 
   // Overtime Actions
   submitOvertimeRequest: (otData: Omit<OvertimeRequest, 'id' | 'createdAt'>) => Promise<void>;
@@ -297,8 +298,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteEmployee = async (id: string) => {
-    // Optimistic UI update
+    // Optimistic UI update across all related collections
     setEmployees((prev) => prev.filter((e) => e.id !== id));
+    setAttendance((prev) => prev.filter((a) => a.employeeId !== id));
+    setShifts((prev) => prev.filter((s) => s.employeeId !== id));
 
     await storageService.deleteEmployee(id);
     await storageService.logAction(
@@ -309,6 +312,11 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.role || 'admin',
       { id }
     );
+  };
+
+  const deleteAttendance = async (id: string) => {
+    setAttendance((prev) => prev.filter((a) => a.id !== id));
+    await storageService.deleteAttendance(id);
   };
 
   // LENDING / ADVANCE ACTIONS
@@ -1271,6 +1279,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         markDailyAttendance,
         markAllAttendance,
         settleWeeklyAttendance,
+        deleteAttendance,
         submitOvertimeRequest,
         approveOvertime,
         rejectOvertime,
