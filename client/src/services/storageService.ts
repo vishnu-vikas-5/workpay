@@ -24,6 +24,9 @@ import {
   INITIAL_USERS,
 } from './seedData';
 import { isFirebaseConfigured, db } from './firebase';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import {
   collection,
   getDocs,
@@ -793,6 +796,38 @@ export const storageService = {
     // Cache in local storage for safety
     localStorage.setItem('workpay_last_local_backup', jsonStr);
     localStorage.setItem('workpay_last_backup_date', new Date().toISOString());
+
+    // Native Mobile App handling (Android / iOS via Capacitor)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const saved = await Filesystem.writeFile({
+          path: filename,
+          data: jsonStr,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+
+        try {
+          await Filesystem.writeFile({
+            path: filename,
+            data: jsonStr,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+          });
+        } catch (e) {}
+
+        await Share.share({
+          title: 'WorkPay Database Backup',
+          text: `WorkPay Database Backup (${dateStr})`,
+          url: saved.uri,
+          dialogTitle: 'Save / Share Backup JSON',
+        });
+
+        return { filename, sizeBytes: jsonStr.length };
+      } catch (mobileErr) {
+        console.warn('Native mobile backup download error:', mobileErr);
+      }
+    }
 
     // Native browser/device file download
     const blob = new Blob([jsonStr], { type: 'application/json' });
