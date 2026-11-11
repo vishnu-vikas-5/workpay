@@ -114,35 +114,60 @@ export function generatePaymentReceiptPDF(
   // Earnings Breakdown Table
   const lastTableY = (doc as any).lastAutoTable.finalY + 6;
 
+  const isQuickPay = !!transaction.shiftsCount || !payroll;
+  const shiftRate = transaction.shiftRate || (employee?.shiftRate) || 800;
+  const otRate = transaction.overtimeRate || Math.round((shiftRate / 8) * 100) / 100;
+  const shiftsCount = transaction.shiftsCount ?? 1;
+  const otHours = transaction.overtimeHours ?? 0;
+  const regularWages = transaction.shiftPay ?? (shiftsCount * shiftRate);
+  const otWages = transaction.overtimePay ?? Math.round(otHours * otRate);
+
+  const tableBody = isQuickPay
+    ? [
+        [
+          'Standard 8-Hour Shift Wages',
+          `${shiftsCount} shift${shiftsCount > 1 ? 's' : ''} (8 hrs each)`,
+          `${formatINR(shiftRate)} / 8h shift`,
+          formatINR(regularWages),
+        ],
+        [
+          'Overtime Wages (Shift Rate ÷ 8)',
+          `${otHours} hrs`,
+          `${formatINR(otRate)} / hr`,
+          formatINR(otWages),
+        ],
+      ]
+    : [
+        [
+          'Regular Shift Wages',
+          `${payroll?.regularHours || 0} hrs`,
+          formatINR(employee?.hourlyWage || 100) + ' / hr',
+          formatINR(payroll?.regularWages || 0),
+        ],
+        [
+          'Approved Overtime Wages',
+          `${payroll?.overtimeHours || 0} hrs`,
+          `${(employee?.overtimeMultiplier || 1.5)}x (${formatINR((employee?.hourlyWage || 100) * (employee?.overtimeMultiplier || 1.5))}/hr)`,
+          formatINR(payroll?.overtimeWages || 0),
+        ],
+        [
+          'Performance Bonus / Allowances',
+          payroll?.bonusDescription || 'Regular attendance incentive',
+          '-',
+          formatINR(payroll?.bonuses || 0),
+        ],
+        [
+          'Statutory Deductions / Advances',
+          payroll?.deductionDescription || 'TDS / Security deposit',
+          '-',
+          '- ' + formatINR(payroll?.deductions || 0),
+        ],
+      ];
+
   autoTable(doc, {
     startY: lastTableY,
-    head: [['Item Description', 'Hours / Units', 'Rate / Multiplier', 'Amount (INR)']],
-    body: [
-      [
-        'Regular Shift Wages',
-        `${payroll?.regularHours || 0} hrs`,
-        formatINR(employee?.hourlyWage || 100) + ' / hr',
-        formatINR(payroll?.regularWages || 0),
-      ],
-      [
-        'Approved Overtime Wages',
-        `${payroll?.overtimeHours || 0} hrs`,
-        `${(employee?.overtimeMultiplier || 1.5)}x (${formatINR((employee?.hourlyWage || 100) * (employee?.overtimeMultiplier || 1.5))}/hr)`,
-        formatINR(payroll?.overtimeWages || 0),
-      ],
-      [
-        'Performance Bonus / Allowances',
-        payroll?.bonusDescription || 'Regular attendance incentive',
-        '-',
-        formatINR(payroll?.bonuses || 0),
-      ],
-      [
-        'Statutory Deductions / Advances',
-        payroll?.deductionDescription || 'TDS / Security deposit',
-        '-',
-        '- ' + formatINR(payroll?.deductions || 0),
-      ],
-    ],
+    head: [['Item Description', 'Hours / Units', 'Rate / Formula', 'Amount (INR)']],
+    body: tableBody,
     foot: [
       ['', '', 'TOTAL NET DISBURSED', formatINR(transaction.amount)],
     ],

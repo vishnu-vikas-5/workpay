@@ -116,7 +116,13 @@ export const storageService = {
         console.warn('Fallback to local employees', e);
       }
     }
-    return getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
+    const local = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
+    if (!local.some((e) => e.fullName.toLowerCase() === 'vishnuvikas')) {
+      const merged = [INITIAL_EMPLOYEES[0], ...local];
+      setLocal(KEYS.EMPLOYEES, merged);
+      return merged;
+    }
+    return local;
   },
 
   saveEmployee: async (employee: Employee): Promise<void> => {
@@ -314,7 +320,13 @@ export const storageService = {
         console.warn('Fallback to local payments', e);
       }
     }
-    return getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
+    const localTx = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS);
+    if (!localTx.some((t) => t.id === 'txn-wp-902')) {
+      const mergedTx = [INITIAL_TRANSACTIONS[0], ...localTx];
+      setLocal(KEYS.TRANSACTIONS, mergedTx);
+      return mergedTx;
+    }
+    return localTx;
   },
 
   saveTransaction: async (tx: PaymentTransaction): Promise<void> => {

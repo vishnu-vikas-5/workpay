@@ -1,137 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from './context/AuthContext';
-import { Sidebar } from './components/layout/Sidebar';
-import { Topbar } from './components/layout/Topbar';
-import { Dashboard } from './pages/Dashboard';
-import { QuickPayPage } from './pages/QuickPayPage';
-import { Employees } from './pages/Employees';
-import { ShiftCalendar } from './pages/ShiftCalendar';
-import { Attendance } from './pages/Attendance';
-import { Overtime } from './pages/Overtime';
-import { Payroll } from './pages/Payroll';
-import { PaymentProcessing } from './pages/PaymentProcessing';
-import { PaymentHistory } from './pages/PaymentHistory';
-import { Reports } from './pages/Reports';
-import { NotificationsPage } from './pages/NotificationsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { AuditLogsPage } from './pages/AuditLogsPage';
-import { EmployeeDashboard } from './pages/EmployeeDashboard';
-import { EmployeePaymentHistory } from './pages/EmployeePaymentHistory';
-import { Login } from './pages/Login';
+import React, { useState } from 'react';
+import { CreditCard, Zap, UserPlus, History } from 'lucide-react';
+import { QuickPayConsole } from './components/common/QuickPayConsole';
+import { PaymentHistorySection } from './components/common/PaymentHistorySection';
+import { EmployeeModal } from './components/modals/EmployeeModal';
+import { useAppData } from './context/AppDataContext';
 
 export const App: React.FC = () => {
-  const { isAuthenticated, role } = useAuth();
-
-  const [currentPath, setCurrentPath] = useState<string>(() => {
-    return window.location.hash.replace('#', '') || '/';
-  });
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState('');
-  const [payoutTargetPayrollId, setPayoutTargetPayrollId] = useState<string | undefined>(undefined);
-
-  // Sync with browser hash
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') || '/';
-      setCurrentPath(hash);
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  const navigate = (path: string) => {
-    window.location.hash = path;
-    setCurrentPath(path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Role Protection: Ensure employee stays within worker pages
-  useEffect(() => {
-    if (role === 'employee') {
-      const allowed = ['/employee-dashboard', '/shifts', '/attendance', '/employee-payments', '/notifications', '/quick-pay'];
-      if (!allowed.includes(currentPath)) {
-        navigate('/employee-dashboard');
-      }
-    } else if (currentPath === '/employee-dashboard' || currentPath === '/employee-payments') {
-      navigate('/');
-    }
-  }, [role, currentPath]);
-
-  // Render Page Content
-  const renderContent = () => {
-    switch (currentPath) {
-      case '/':
-        return <Dashboard onNavigate={navigate} />;
-      case '/quick-pay':
-        return <QuickPayPage />;
-      case '/login':
-        return <Login onSuccess={() => navigate('/')} />;
-      case '/employees':
-        return <Employees />;
-      case '/shifts':
-        return <ShiftCalendar />;
-      case '/attendance':
-        return <Attendance />;
-      case '/overtime':
-        return <Overtime />;
-      case '/payroll':
-        return (
-          <Payroll
-            onNavigateToPayment={(payrollId) => {
-              setPayoutTargetPayrollId(payrollId);
-              navigate('/payments');
-            }}
-          />
-        );
-      case '/payments':
-        return (
-          <PaymentProcessing
-            initialPayrollId={payoutTargetPayrollId}
-            onNavigateToHistory={() => navigate('/payment-history')}
-          />
-        );
-      case '/payment-history':
-        return <PaymentHistory />;
-      case '/reports':
-        return <Reports />;
-      case '/notifications':
-        return <NotificationsPage onNavigate={navigate} />;
-      case '/settings':
-        return <SettingsPage />;
-      case '/audit-logs':
-        return <AuditLogsPage />;
-      case '/employee-dashboard':
-        return <EmployeeDashboard onNavigate={navigate} />;
-      case '/employee-payments':
-        return <EmployeePaymentHistory />;
-      default:
-        return <Dashboard onNavigate={navigate} />;
-    }
-  };
+  const { employees } = useAppData();
+  const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar Navigation */}
-      <Sidebar
-        currentPath={currentPath}
-        onNavigate={navigate}
-        mobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      {/* Sleek Top Navigation Bar */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs px-4 sm:px-8 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          {/* Logo & Tagline */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+              <CreditCard className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-xl text-slate-900 tracking-tight">WorkPay</span>
+                <span className="text-[10px] font-bold bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full border border-brand-200">
+                  INSTANT PAYOUT
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 hidden sm:block">
+                Manage Shifts. Track Overtime. Pay Smarter.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Header Actions */}
+          <div className="flex items-center gap-2.5">
+            <a
+              href="#history"
+              className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Payment History</span>
+            </a>
+
+            <button
+              onClick={() => setIsAddEmployeeOpen(true)}
+              className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-1.5 transition-all"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Add Employee</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Single Page View */}
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        {/* Section 1: Quick Pay Console */}
+        <section>
+          <QuickPayConsole />
+        </section>
+
+        {/* Section 2: Payment History Section */}
+        <section id="history" className="scroll-mt-20">
+          <PaymentHistorySection />
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500 mt-auto">
+        <p className="font-medium">
+          <span className="font-bold text-slate-700">WorkPay</span> – Worker Shift, Overtime & UPI Payout Platform
+        </p>
+        <p className="text-[11px] text-slate-400 mt-1">
+          Shift rate is for 8 hours • Overtime calculated at (Shift Rate ÷ 8) per hour • Direct UPI Redirection & QR Settlement
+        </p>
+      </footer>
+
+      {/* Global Add Employee Modal */}
+      <EmployeeModal
+        isOpen={isAddEmployeeOpen}
+        onClose={() => setIsAddEmployeeOpen(false)}
       />
-
-      {/* Main Content Area */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        <Topbar
-          onToggleMobile={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-          searchQuery={globalSearch}
-          onSearchChange={setGlobalSearch}
-          onNavigate={navigate}
-        />
-
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-200">
-          {renderContent()}
-        </main>
-      </div>
     </div>
   );
 };

@@ -8,12 +8,14 @@ interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   employeeToEdit?: Employee | null;
+  onSuccess?: (employee: Employee) => void;
 }
 
 export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   isOpen,
   onClose,
   employeeToEdit,
+  onSuccess,
 }) => {
   const { addEmployee, updateEmployee, departments } = useAppData();
 
@@ -74,7 +76,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       const hourlyWage = Math.round((shiftRate / 8) * 100) / 100;
 
       if (employeeToEdit) {
-        await updateEmployee({
+        const updated = {
           ...employeeToEdit,
           fullName: fullName.trim(),
           phone: phone.trim(),
@@ -87,9 +89,11 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           department,
           designation,
           status,
-        });
+        };
+        await updateEmployee(updated);
+        onSuccess?.(updated);
       } else {
-        await addEmployee({
+        const created = await addEmployee({
           employeeCode: '', // auto-generated
           fullName: fullName.trim(),
           phone: phone.trim(),
@@ -104,6 +108,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           dateOfJoining: new Date().toISOString().split('T')[0],
           status,
         });
+        onSuccess?.(created);
       }
 
       onClose();

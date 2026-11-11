@@ -56,6 +56,19 @@ interface AppDataContextType {
 
   // Payment Actions
   disbursePayout: (payrollId: string, paymentMethod?: 'razorpayx_upi' | 'razorpayx_bank_transfer' | 'upi_intent_manual') => Promise<{ success: boolean; transaction?: PaymentTransaction; error?: string }>;
+  recordQuickPayment: (data: {
+    employee: Employee;
+    shiftsCount: number;
+    shiftRate: number;
+    overtimeHours: number;
+    overtimeRate: number;
+    shiftPay: number;
+    overtimePay: number;
+    totalPayable: number;
+    paymentMethod?: 'upi_intent_manual' | 'razorpayx_upi';
+    providerReferenceId?: string;
+  }) => Promise<PaymentTransaction>;
+  deleteTransaction: (id: string) => Promise<void>;
 
   // Notification Actions
   markNotificationRead: (id: string) => Promise<void>;
@@ -679,6 +692,76 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return result;
   };
 
+  const recordQuickPayment = async (data: {
+    employee: Employee;
+    shiftsCount: number;
+    shiftRate: number;
+    overtimeHours: number;
+    overtimeRate: number;
+    shiftPay: number;
+    overtimePay: number;
+    totalPayable: number;
+    paymentMethod?: 'upi_intent_manual' | 'razorpayx_upi';
+    providerReferenceId?: string;
+  }): Promise<PaymentTransaction> => {
+    const txId = `TXN-WP-${Date.now().toString().slice(-8)}`;
+    const utr = data.providerReferenceId || `UTR${Math.floor(100000000000 + Math.random() * 900000000000)}`;
+    const transaction: PaymentTransaction = {
+      id: txId,
+      payrollId: `pay-quick-${Date.now()}`,
+      employeeId: data.employee.id,
+      employeeName: data.employee.fullName,
+      employeeCode: data.employee.employeeCode || `EMP-${data.employee.id.slice(-4)}`,
+      employeePhone: data.employee.phone,
+      amount: data.totalPayable,
+      currency: 'INR',
+      paymentMethod: data.paymentMethod || 'upi_intent_manual',
+      destination: {
+        type: 'vpa',
+        upiId: data.employee.upiId || `${data.employee.phone}@upi`,
+        beneficiaryName: data.employee.fullName,
+      },
+      providerReferenceId: utr,
+      idempotencyKey: `quick-${Date.now()}-${data.employee.id}`,
+      status: 'Successful',
+      initiatedBy: `${user?.name || 'Admin'} (${user?.role || 'admin'})`,
+      initiatedAt: new Date().toISOString(),
+      processedAt: new Date().toISOString(),
+      shiftsCount: data.shiftsCount,
+      shiftRate: data.shiftRate,
+      overtimeHours: data.overtimeHours,
+      overtimeRate: data.overtimeRate,
+      shiftPay: data.shiftPay,
+      overtimePay: data.overtimePay,
+      notes: `${data.shiftsCount} shift${data.shiftsCount > 1 ? 's' : ''} (₹${data.shiftRate}) + ${data.overtimeHours}h OT (₹${data.overtimeRate}/hr)`,
+    };
+
+    await storageService.saveTransaction(transaction);
+    await storageService.logAction(
+      'QUICK_UPI_PAYOUT',
+      'payment',
+      transaction.id,
+      user?.name || 'Admin',
+      user?.role || 'admin',
+      {
+        employee: data.employee.fullName,
+        upiId: data.employee.upiId,
+        amount: data.totalPayable,
+        utr,
+      }
+    );
+
+    await loadData();
+    return transaction;
+  };
+
+  const deleteTransaction = async (id: string) => {
+    const list = await storageService.getTransactions();
+    const filtered = list.filter((t) => t.id !== id);
+    localStorage.setItem('workpay_transactions', JSON.stringify(filtered));
+    await loadData();
+  };
+
   // NOTIFICATIONS
   const markNotificationRead = async (id: string) => {
     await storageService.markNotificationRead(id);
@@ -725,6 +808,8 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         generatePayroll,
         approvePayrollRecord,
         disbursePayout,
+        recordQuickPayment,
+        deleteTransaction,
         markNotificationRead,
         markAllNotificationsRead,
         resetToSeedData,

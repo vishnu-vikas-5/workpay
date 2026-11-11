@@ -193,6 +193,13 @@ export interface PaymentTransaction {
   }>;
   upiIntentUrl?: string;
   notes?: string;
+  shiftsCount?: number;
+  shiftRate?: number;
+  overtimeHours?: number;
+  overtimeRate?: number;
+  shiftPay?: number;
+  overtimePay?: number;
+  employeePhone?: string;
 }
 
 export interface NotificationItem {

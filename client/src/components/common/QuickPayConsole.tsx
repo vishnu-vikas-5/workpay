@@ -14,6 +14,7 @@ import {
   User,
   Calculator,
 } from 'lucide-react';
+import { Employee, PaymentTransaction } from '../../types';
 import { useAppData } from '../../context/AppDataContext';
 import { EmployeeModal } from '../modals/EmployeeModal';
 import { UpiQrModal } from './UpiQrModal';
@@ -21,8 +22,8 @@ import { formatINR } from '../../utils/utils';
 import { generateUpiIntentUri, getAppSpecificUpiLinks } from '../../utils/upiUtils';
 import { generatePaymentReceiptPDF } from '../../utils/receiptGenerator';
 
-export const QuickPayConsole: React.FC = () => {
-  const { employees, disbursePayout, refreshAll } = useAppData();
+export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => void }> = ({ onEmployeeAdded }) => {
+  const { employees, recordQuickPayment, refreshAll } = useAppData();
 
   const [selectedEmpId, setSelectedEmpId] = useState<string>('');
   const [shiftsCount, setShiftsCount] = useState<number>(1);
@@ -33,6 +34,7 @@ export const QuickPayConsole: React.FC = () => {
     amount: number;
     employeeName: string;
     utr: string;
+    tx?: PaymentTransaction;
   } | null>(null);
 
   // Set default employee selection when list loads
@@ -83,14 +85,24 @@ export const QuickPayConsole: React.FC = () => {
   const handleMarkAsPaid = async () => {
     if (!selectedEmployee) return;
 
-    // Call payout handler
-    const mockPayrollId = `pay-${Date.now()}`;
-    const res = await disbursePayout(mockPayrollId, 'upi_intent_manual');
+    // Record verified transaction in state & storage
+    const tx = await recordQuickPayment({
+      employee: selectedEmployee,
+      shiftsCount,
+      shiftRate,
+      overtimeHours,
+      overtimeRate: hourlyOvertimeRate,
+      shiftPay: regularShiftPay,
+      overtimePay,
+      totalPayable,
+      paymentMethod: 'upi_intent_manual',
+    });
 
     setPaymentSuccessData({
       amount: totalPayable,
       employeeName: selectedEmployee.fullName,
-      utr: `UTR${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+      utr: tx.providerReferenceId || tx.id,
+      tx,
     });
 
     await refreshAll();
@@ -364,24 +376,42 @@ export const QuickPayConsole: React.FC = () => {
 
       {/* Payment Success Confirmation Banner */}
       {paymentSuccessData && (
-        <div className="mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in">
+        <div className="mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
             <div>
               <p className="font-bold text-xs text-emerald-950">
-                Payment of {formatINR(paymentSuccessData.amount)} Recorded Successfully!
+                Payment of {formatINR(paymentSuccessData.amount)} Recorded Successfully in History!
               </p>
               <p className="text-[11px] text-emerald-700">
                 Paid to {paymentSuccessData.employeeName} • Ref: {paymentSuccessData.utr}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setPaymentSuccessData(null)}
-            className="text-xs font-bold text-emerald-800 underline"
-          >
-            Dismiss
-          </button>
+          <div className="flex items-center gap-2">
+            {paymentSuccessData.tx && (
+              <button
+                type="button"
+                onClick={() =>
+                  generatePaymentReceiptPDF(
+                    paymentSuccessData.tx!,
+                    undefined,
+                    selectedEmployee || undefined
+                  )
+                }
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Download Payslip PDF</span>
+              </button>
+            )}
+            <button
+              onClick={() => setPaymentSuccessData(null)}
+              className="px-2.5 py-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 
@@ -389,6 +419,10 @@ export const QuickPayConsole: React.FC = () => {
       <EmployeeModal
         isOpen={isAddEmployeeOpen}
         onClose={() => setIsAddEmployeeOpen(false)}
+        onSuccess={(created) => {
+          setSelectedEmpId(created.id);
+          onEmployeeAdded?.(created);
+        }}
       />
 
       {/* UPI QR Modal */}
@@ -407,3 +441,4 @@ export const QuickPayConsole: React.FC = () => {
     </div>
   );
 };
+

@@ -60,6 +60,24 @@ export const INITIAL_USERS: User[] = [
 
 export const INITIAL_EMPLOYEES: Employee[] = [
   {
+    id: 'emp-vishnu',
+    employeeCode: 'WP-EMP-1000',
+    fullName: 'vishnuvikas',
+    phone: '6383605262',
+    email: 'vishnuvikas2@workpay.io',
+    department: 'Operations',
+    designation: 'Shift Specialist',
+    dateOfJoining: '2026-01-01',
+    shiftRate: 800, // ₹800 per 8hr shift
+    hourlyWage: 100, // 800 / 8 = ₹100/hr
+    standardWorkingHours: 8,
+    overtimeMultiplier: 1.0, // Overtime rate = ₹100/hr
+    upiId: 'vishnuvikas2@oksbi',
+    status: 'active',
+    createdAt: '2026-01-01T09:00:00Z',
+    updatedAt: '2026-03-01T10:00:00Z',
+  },
+  {
     id: 'emp-1',
     employeeCode: 'WP-EMP-1001',
     fullName: 'Rajesh Kumar',
@@ -552,6 +570,35 @@ export const INITIAL_PAYROLL: PayrollRecord[] = [
 ];
 
 export const INITIAL_TRANSACTIONS: PaymentTransaction[] = [
+  {
+    id: 'txn-wp-902',
+    payrollId: 'pay-quick-001',
+    employeeId: 'emp-vishnu',
+    employeeName: 'vishnuvikas',
+    employeeCode: 'WP-EMP-1000',
+    employeePhone: '6383605262',
+    amount: 1000,
+    currency: 'INR',
+    paymentMethod: 'upi_intent_manual',
+    destination: {
+      type: 'vpa',
+      upiId: 'vishnuvikas2@oksbi',
+      beneficiaryName: 'vishnuvikas',
+    },
+    providerReferenceId: 'UTR782910394812',
+    idempotencyKey: 'idemp_wp_vishnu_001',
+    status: 'Successful',
+    initiatedBy: 'Admin',
+    initiatedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    processedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    shiftsCount: 1,
+    shiftRate: 800,
+    overtimeHours: 2,
+    overtimeRate: 100,
+    shiftPay: 800,
+    overtimePay: 200,
+    notes: '1 shift (₹800) + 2h OT (₹100/hr)',
+  },
   {
     id: 'txn-wp-901',
     payrollId: 'pay-2026-11-001',
