@@ -12,6 +12,8 @@
     "@capacitor/android": "^8.6.0",
     "@capacitor/cli": "^8.6.0",
     "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "firebase": "^10.12.2",

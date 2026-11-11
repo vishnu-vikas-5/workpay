@@ -1,13 +1,16 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { PaymentTransaction, PayrollRecord, Employee } from '../types';
 import { formatINR, maskAccountNumber } from './utils';
 
-export function generatePaymentReceiptPDF(
+export async function generatePaymentReceiptPDF(
   transaction: PaymentTransaction,
   payroll?: PayrollRecord,
   employee?: Employee
-) {
+): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -223,6 +226,60 @@ export function generatePaymentReceiptPDF(
   doc.text('WorkPay Payroll Disbursements', 140, signY + 25);
 
   // Save PDF
-  doc.save(`WorkPay_Receipt_${transaction.id}.pdf`);
+  const fileName = `WorkPay_Receipt_${transaction.id}.pdf`;
+
+  // Native Mobile App handler (Android / iOS via Capacitor)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // 1. Convert jsPDF output to raw Base64 data string
+      const dataUri = doc.output('datauristring');
+      const base64Data = dataUri.split(',')[1];
+
+      // 2. Write file to Cache directory (safe for FileProvider sharing)
+      const savedCache = await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Cache,
+      });
+
+      // 3. Also write directly to Documents directory for permanent device storage
+      try {
+        await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents,
+        });
+      } catch (docErr) {
+        console.warn('Documents directory write skipped:', docErr);
+      }
+
+      // 4. Trigger Native Android Share / Open Sheet
+      await Share.share({
+        title: `WorkPay Receipt - ${transaction.employeeName || 'Worker'}`,
+        text: `WorkPay Payment Receipt (${transaction.id}) - ${formatINR(transaction.amount)}`,
+        url: savedCache.uri,
+        dialogTitle: 'Save / Open PDF Receipt',
+      });
+      return;
+    } catch (mobileErr) {
+      console.warn('Native mobile PDF share/save error:', mobileErr);
+    }
+  }
+
+  // Web Browser fallback (desktop & mobile browser)
+  try {
+    doc.save(fileName);
+  } catch (webErr) {
+    console.warn('Standard doc.save fallback:', webErr);
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 

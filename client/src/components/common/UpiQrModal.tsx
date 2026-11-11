@@ -52,11 +52,18 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs">
-      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-6 text-center animate-in fade-in zoom-in-95 max-h-[95vh] overflow-y-auto">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-6 text-center animate-in fade-in zoom-in-95 max-h-[95vh] overflow-y-auto"
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+          className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors z-10"
+          aria-label="Close modal"
         >
           <X className="w-4 h-4" />
         </button>
