@@ -13,22 +13,28 @@ import {
   Phone,
   User,
   Calculator,
+  Pencil,
+  Trash2,
+  Users,
 } from 'lucide-react';
 import { Employee, PaymentTransaction } from '../../types';
 import { useAppData } from '../../context/AppDataContext';
 import { EmployeeModal } from '../modals/EmployeeModal';
+import { ManageEmployeesModal } from '../modals/ManageEmployeesModal';
 import { UpiQrModal } from './UpiQrModal';
 import { formatINR } from '../../utils/utils';
 import { generateUpiIntentUri, getAppSpecificUpiLinks } from '../../utils/upiUtils';
 import { generatePaymentReceiptPDF } from '../../utils/receiptGenerator';
 
 export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => void }> = ({ onEmployeeAdded }) => {
-  const { employees, recordQuickPayment, refreshAll } = useAppData();
+  const { employees, recordQuickPayment, deleteEmployee, refreshAll } = useAppData();
 
   const [selectedEmpId, setSelectedEmpId] = useState<string>('');
   const [shiftsCount, setShiftsCount] = useState<number>(1);
   const [overtimeHours, setOvertimeHours] = useState<number>(2);
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<{
     amount: number;
@@ -36,6 +42,18 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
     utr: string;
     tx?: PaymentTransaction;
   } | null>(null);
+
+  const handleDeleteEmployee = async (emp: Employee) => {
+    if (window.confirm(`Are you sure you want to remove "${emp.fullName}" from the employee roster?`)) {
+      await deleteEmployee(emp.id);
+      const remaining = employees.filter((e) => e.id !== emp.id);
+      if (remaining.length > 0) {
+        setSelectedEmpId(remaining[0].id);
+      } else {
+        setSelectedEmpId('');
+      }
+    }
+  };
 
   // Set default employee selection when list loads
   React.useEffect(() => {
@@ -129,13 +147,28 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddEmployeeOpen(true)}
-          className="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center justify-center gap-2 transition-all shrink-0"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>+ Add Employee</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsManageWorkersOpen(true)}
+            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <Users className="w-3.5 h-3.5 text-slate-500" />
+            <span>Manage Employees</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEmployeeToEdit(null);
+              setIsAddEmployeeOpen(true);
+            }}
+            className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center justify-center gap-2 transition-all shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>+ Add Employee</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Grid */}
@@ -149,13 +182,26 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
                 <User className="w-3.5 h-3.5 text-brand-600" />
                 <span>1. Select Employee</span>
               </label>
-              <button
-                type="button"
-                onClick={() => setIsAddEmployeeOpen(true)}
-                className="text-[11px] font-semibold text-brand-600 hover:text-brand-700"
-              >
-                + New Employee
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsManageWorkersOpen(true)}
+                  className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-lg transition-colors flex items-center gap-1"
+                >
+                  <Users className="w-3 h-3 text-slate-500" />
+                  <span>Manage All</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmployeeToEdit(null);
+                    setIsAddEmployeeOpen(true);
+                  }}
+                  className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 px-2 py-0.5 rounded-lg border border-brand-200/50"
+                >
+                  + New Employee
+                </button>
+              </div>
             </div>
 
             <select
@@ -172,7 +218,7 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
             </select>
           </div>
 
-          {/* Selected Worker Info Chip */}
+          {/* Selected Worker Info Chip with Edit and Remove Options */}
           {selectedEmployee && (
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5">
@@ -185,9 +231,34 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
                 </div>
               </div>
 
-              <div className="text-right">
-                <p className="text-[10px] text-slate-400 font-semibold uppercase">UPI ID (VPA)</p>
-                <p className="font-mono font-bold text-brand-700">{selectedEmployee.upiId}</p>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase">UPI ID (VPA)</p>
+                  <p className="font-mono font-bold text-brand-700">{selectedEmployee.upiId}</p>
+                </div>
+
+                <div className="flex items-center gap-1 border-l border-slate-200 pl-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmployeeToEdit(selectedEmployee);
+                      setIsAddEmployeeOpen(true);
+                    }}
+                    className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-colors"
+                    title="Edit Employee details and shift rate"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEmployee(selectedEmployee)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-colors"
+                    title="Remove Employee"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -415,13 +486,31 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
         </div>
       )}
 
-      {/* Add Employee Modal */}
+      {/* Add / Edit Employee Modal */}
       <EmployeeModal
         isOpen={isAddEmployeeOpen}
-        onClose={() => setIsAddEmployeeOpen(false)}
+        employeeToEdit={employeeToEdit}
+        onClose={() => {
+          setIsAddEmployeeOpen(false);
+          setEmployeeToEdit(null);
+        }}
         onSuccess={(created) => {
           setSelectedEmpId(created.id);
           onEmployeeAdded?.(created);
+        }}
+      />
+
+      {/* Manage Employees Directory Modal */}
+      <ManageEmployeesModal
+        isOpen={isManageWorkersOpen}
+        onClose={() => setIsManageWorkersOpen(false)}
+        onAddNew={() => {
+          setEmployeeToEdit(null);
+          setIsAddEmployeeOpen(true);
+        }}
+        onEdit={(emp) => {
+          setEmployeeToEdit(emp);
+          setIsAddEmployeeOpen(true);
         }}
       />
 

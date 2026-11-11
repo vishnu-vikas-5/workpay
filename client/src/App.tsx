@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { CreditCard, Zap, UserPlus, History } from 'lucide-react';
+import { CreditCard, Zap, UserPlus, History, Users } from 'lucide-react';
 import { QuickPayConsole } from './components/common/QuickPayConsole';
 import { PaymentHistorySection } from './components/common/PaymentHistorySection';
 import { EmployeeModal } from './components/modals/EmployeeModal';
+import { ManageEmployeesModal } from './components/modals/ManageEmployeesModal';
+import { Employee } from './types';
 import { useAppData } from './context/AppDataContext';
 
 export const App: React.FC = () => {
   const { employees } = useAppData();
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
@@ -34,6 +38,14 @@ export const App: React.FC = () => {
 
           {/* Quick Header Actions */}
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsManageWorkersOpen(true)}
+              className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <Users className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Manage Employees</span>
+            </button>
+
             <a
               href="#history"
               className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5"
@@ -43,7 +55,10 @@ export const App: React.FC = () => {
             </a>
 
             <button
-              onClick={() => setIsAddEmployeeOpen(true)}
+              onClick={() => {
+                setEmployeeToEdit(null);
+                setIsAddEmployeeOpen(true);
+              }}
               className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-1.5 transition-all"
             >
               <UserPlus className="w-4 h-4" />
@@ -76,10 +91,28 @@ export const App: React.FC = () => {
         </p>
       </footer>
 
-      {/* Global Add Employee Modal */}
+      {/* Global Add / Edit Employee Modal */}
       <EmployeeModal
         isOpen={isAddEmployeeOpen}
-        onClose={() => setIsAddEmployeeOpen(false)}
+        employeeToEdit={employeeToEdit}
+        onClose={() => {
+          setIsAddEmployeeOpen(false);
+          setEmployeeToEdit(null);
+        }}
+      />
+
+      {/* Global Manage Employees Modal */}
+      <ManageEmployeesModal
+        isOpen={isManageWorkersOpen}
+        onClose={() => setIsManageWorkersOpen(false)}
+        onAddNew={() => {
+          setEmployeeToEdit(null);
+          setIsAddEmployeeOpen(true);
+        }}
+        onEdit={(emp) => {
+          setEmployeeToEdit(emp);
+          setIsAddEmployeeOpen(true);
+        }}
       />
     </div>
   );

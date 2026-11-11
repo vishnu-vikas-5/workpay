@@ -33,6 +33,7 @@ interface AppDataContextType {
   addEmployee: (emp: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Employee>;
   updateEmployee: (emp: Employee) => Promise<void>;
   deactivateEmployee: (id: string) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>;
 
   // Shift Actions
   assignShift: (shiftData: Omit<Shift, 'id' | 'createdAt'>) => Promise<{ success: boolean; shift?: Shift; error?: string }>;
@@ -187,6 +188,19 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user?.name || 'Admin',
       user?.role || 'admin',
       { name: emp.fullName }
+    );
+    await loadData();
+  };
+
+  const deleteEmployee = async (id: string) => {
+    await storageService.deleteEmployee(id);
+    await storageService.logAction(
+      'EMPLOYEE_DELETED',
+      'employee',
+      id,
+      user?.name || 'Admin',
+      user?.role || 'admin',
+      { id }
     );
     await loadData();
   };
@@ -795,6 +809,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addEmployee,
         updateEmployee,
         deactivateEmployee,
+        deleteEmployee,
         assignShift,
         assignBulkShifts,
         updateShift,
