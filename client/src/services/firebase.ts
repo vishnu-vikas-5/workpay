@@ -8,18 +8,18 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'workpay-demo.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'workpay-demo',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'workpay-demo.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789012',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789012:web:abcdef123456',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCeIjhZkNYbK_o_Rlbs03zIIQHxkwrgj-c',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'billmate-6d1a2.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'billmate-6d1a2',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'billmate-6d1a2.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '1099199682233',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:1099199682233:web:7a562f78b669a4d5ec6d68',
 };
 
 export const isFirebaseConfigured = Boolean(
-  import.meta.env.VITE_FIREBASE_API_KEY &&
-  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
-  import.meta.env.VITE_FIREBASE_API_KEY !== 'demo-api-key'
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId &&
+  firebaseConfig.apiKey !== 'demo-api-key'
 );
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
