@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   CreditCard,
   Zap,
@@ -59,36 +59,61 @@ export const App: React.FC = () => {
     }
   };
 
-  // Route routing: Default root '/' is the Main Web Application
-  // Dedicated download page is at '/download', '/download.html', or '?download'
+  // Route routing:
+  // Root '/' and '/download' open the Download Page (as requested by user)
+  // '/app' and '/web' open the Main Application Console
   const [viewMode, setViewMode] = useState<'download' | 'app'>(() => {
-    const path = window.location.pathname;
-    const search = window.location.search;
-    const hash = window.location.hash;
+    const path = window.location.pathname.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
 
+    // If explicitly requesting the app portal
     if (
-      path === '/download' ||
-      path === '/download.html' ||
-      path.startsWith('/download') ||
-      search.includes('download') ||
-      hash.includes('download')
+      path === '/app' ||
+      path.startsWith('/app') ||
+      path === '/web' ||
+      path.startsWith('/web') ||
+      search.includes('app') ||
+      hash.includes('app')
     ) {
-      return 'download';
+      return 'app';
     }
 
-    return 'app';
+    // Default root '/' and all other paths open the Download Page
+    return 'download';
   });
+
+  // Keep viewMode synced if user clicks browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      if (
+        path === '/app' ||
+        path.startsWith('/app') ||
+        path === '/web' ||
+        path.startsWith('/web') ||
+        search.includes('app')
+      ) {
+        setViewMode('app');
+      } else {
+        setViewMode('download');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleGoToWebApp = () => {
     try {
-      window.history.pushState({}, '', '/');
+      window.history.pushState({}, '', '/app');
     } catch (e) {}
     setViewMode('app');
   };
 
   const handleGoToDownload = () => {
     try {
-      window.history.pushState({}, '', '/download');
+      window.history.pushState({}, '', '/');
     } catch (e) {}
     setViewMode('download');
   };
