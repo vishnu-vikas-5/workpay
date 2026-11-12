@@ -11,10 +11,10 @@ import {
   Timer,
   CheckCircle2,
   User,
-  AlertTriangle,
+  Plus,
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
-import { alarmService, OvertimeTimer, AttendanceReminderSettings } from '../../services/alarmService';
+import { alarmService, ActiveAlarm, ShiftAlarmSettings } from '../../services/alarmService';
 
 interface OvertimeAlarmModalProps {
   isOpen: boolean;
@@ -29,18 +29,18 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
 }) => {
   const { employees } = useAppData();
 
+  const [shiftSettings, setShiftSettings] = useState<ShiftAlarmSettings>(
+    alarmService.getShiftAlarmSettings()
+  );
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>(
     defaultEmployeeId || employees[0]?.id || ''
   );
-  const [durationMinutes, setDurationMinutes] = useState<number>(60); // Default 1 hour
-  const [customHours, setCustomHours] = useState<string>('1');
+  const [otHours, setOtHours] = useState<number>(1); // Default 1 hour OT
+  const [timingMode, setTimingMode] = useState<'from_shift_end' | 'from_now'>('from_shift_end');
   const [note, setNote] = useState<string>('');
-  const [timers, setTimers] = useState<OvertimeTimer[]>([]);
-  const [reminderSettings, setReminderSettings] = useState<AttendanceReminderSettings>(
-    alarmService.getDailyReminderSettings()
-  );
+  const [alarms, setAlarms] = useState<ActiveAlarm[]>([]);
   const [now, setNow] = useState<number>(Date.now());
-  const [testSoundNotice, setTestSoundNotice] = useState<string | null>(null);
+  const [toastNotice, setToastNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (defaultEmployeeId) {
@@ -50,15 +50,14 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
     }
   }, [defaultEmployeeId, employees]);
 
-  // Refresh timers and update live tick
   useEffect(() => {
     if (!isOpen) return;
-    setTimers(alarmService.getOvertimeTimers());
-    setReminderSettings(alarmService.getDailyReminderSettings());
+    setAlarms(alarmService.getActiveAlarms());
+    setShiftSettings(alarmService.getShiftAlarmSettings());
 
     const interval = setInterval(() => {
       setNow(Date.now());
-      setTimers(alarmService.getOvertimeTimers());
+      setAlarms(alarmService.getActiveAlarms());
     }, 1000);
 
     return () => clearInterval(interval);
@@ -66,46 +65,71 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleStartTimer = (e: React.FormEvent) => {
+  const handleSaveShiftSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    alarmService.saveShiftAlarmSettings(shiftSettings);
+    setToastNotice(`Daily Shift Alarm set to ${format12Hour(shiftSettings.shiftEndTime)}!`);
+    setTimeout(() => setToastNotice(null), 3000);
+  };
+
+  const handleStartOtAlarm = (e: React.FormEvent) => {
     e.preventDefault();
     const emp = employees.find((e) => e.id === selectedEmployeeId);
     const empName = emp ? emp.fullName : 'All Workers';
 
-    alarmService.createOvertimeTimer({
+    alarmService.createOvertimeAlarm({
       employeeId: selectedEmployeeId,
       employeeName: empName,
-      durationMinutes,
+      overtimeHours: otHours,
+      fromShiftEnd: timingMode === 'from_shift_end',
       note: note.trim() || undefined,
     });
 
-    setTimers(alarmService.getOvertimeTimers());
-    setNote('');
+    setAlarms(alarmService.getActiveAlarms());
+    setToastNotice(`Overtime Alarm set for ${empName} (${otHours}h OT)!`);
+    setTimeout(() => setToastNotice(null), 3000);
   };
 
-  const handleCancelTimer = (timerId: string) => {
-    alarmService.cancelTimer(timerId);
-    setTimers(alarmService.getOvertimeTimers());
+  const handleCancelAlarm = (id: string) => {
+    alarmService.cancelAlarm(id);
+    setAlarms(alarmService.getActiveAlarms());
   };
 
   const handleTestSound = () => {
     alarmService.testAlarmSound();
-    setTestSoundNotice('Alarm audio tested! Sound is working.');
-    setTimeout(() => setTestSoundNotice(null), 3000);
+    setToastNotice('Sound is working!');
+    setTimeout(() => setToastNotice(null), 3000);
   };
 
-  const handleSaveReminder = (e: React.FormEvent) => {
-    e.preventDefault();
-    alarmService.saveDailyReminderSettings(reminderSettings);
-    setTestSoundNotice('Daily attendance reminder updated!');
-    setTimeout(() => setTestSoundNotice(null), 3000);
-  };
+  function format12Hour(time24: string) {
+    if (!time24) return '';
+    const [hStr, mStr] = time24.split(':');
+    let h = parseInt(hStr, 10);
+    const m = mStr || '00';
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
 
-  const PRESET_DURATIONS = [
-    { label: '30 Mins (0.5h)', mins: 30 },
-    { label: '1 Hour (1h)', mins: 60, popular: true },
-    { label: '1.5 Hours', mins: 90 },
-    { label: '2 Hours (2h)', mins: 120 },
-    { label: '3 Hours (3h)', mins: 180 },
+  // Calculate projected alarm time if extending from shift end
+  const projectedOtTime = (() => {
+    const [hStr, mStr] = shiftSettings.shiftEndTime.split(':');
+    const d = new Date();
+    d.setHours(parseInt(hStr, 10) || 17, parseInt(mStr, 10) || 30, 0, 0);
+    const targetMs = d.getTime() + otHours * 60 * 60 * 1000;
+    return new Date(targetMs).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  })();
+
+  const OT_OPTIONS = [
+    { label: '+30 Mins (0.5h)', val: 0.5 },
+    { label: '+1 Hour (1.0h)', val: 1.0, popular: true },
+    { label: '+1.5 Hours', val: 1.5 },
+    { label: '+2 Hours (2.0h)', val: 2.0 },
+    { label: '+3 Hours (3.0h)', val: 3.0 },
   ];
 
   return (
@@ -125,13 +149,13 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span>Overtime Alarm & Reminders</span>
+                <span>Shift & Overtime Alarm</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                  Real-Time
+                  Live Audible
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                Audible alarm alerts you to mark attendance when OT is done
+                Audible alarm alerts you to mark attendance & OT on time
               </p>
             </div>
           </div>
@@ -143,11 +167,11 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
           </button>
         </div>
 
-        {/* Audio test banner */}
-        <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+        {/* Test Audio Button */}
+        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
           <div className="flex items-center gap-2 text-slate-700">
             <Volume2 className="w-4 h-4 text-brand-600" />
-            <span className="font-medium">Audio Alarm Alert</span>
+            <span className="font-semibold">Alarm Speaker Test</span>
           </div>
           <button
             type="button"
@@ -159,24 +183,87 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
           </button>
         </div>
 
-        {testSoundNotice && (
+        {toastNotice && (
           <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-            <span>{testSoundNotice}</span>
+            <span>{toastNotice}</span>
           </div>
         )}
 
-        {/* SET NEW OVERTIME TIMER FORM */}
-        <form onSubmit={handleStartTimer} className="space-y-4">
-          <div className="space-y-3">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-slate-400" />
-              <span>1. Select Worker Working Overtime</span>
+        {/* 1. DAILY SHIFT END ALARM (DEFAULT 5:30 PM) */}
+        <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                1. Daily Shift End Alarm
+              </span>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={shiftSettings.enabled}
+                onChange={(e) =>
+                  setShiftSettings((prev) => ({ ...prev, enabled: e.target.checked }))
+                }
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+
+          <p className="text-[11px] text-slate-600">
+            Rings every day to alert you to mark worker shift attendance at end of day.
+          </p>
+
+          {shiftSettings.enabled && (
+            <form onSubmit={handleSaveShiftSettings} className="flex items-center gap-2 pt-1">
+              <div className="relative flex-1">
+                <input
+                  type="time"
+                  value={shiftSettings.shiftEndTime}
+                  onChange={(e) =>
+                    setShiftSettings((prev) => ({ ...prev, shiftEndTime: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-slate-900 shadow-2xs focus:ring-2 focus:ring-indigo-500/20"
+                  required
+                />
+              </div>
+              <span className="text-xs font-bold text-indigo-700 bg-white px-2.5 py-2 rounded-xl border border-indigo-200 shadow-2xs">
+                {format12Hour(shiftSettings.shiftEndTime)}
+              </span>
+              <button
+                type="submit"
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
+              >
+                Set Daily
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* 2. OVERTIME (OT) ALARM EXTENSION (e.g. ADD 1 HOUR) */}
+        <form onSubmit={handleStartOtAlarm} className="space-y-4 pt-1">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Timer className="w-4 h-4 text-amber-600" />
+              <span>2. Overtime (OT) Alarm Extension</span>
+            </label>
+            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              Custom OT
+            </span>
+          </div>
+
+          {/* Select Worker */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-semibold text-slate-600">
+              Worker Doing Overtime:
             </label>
             <select
               value={selectedEmployeeId}
               onChange={(e) => setSelectedEmployeeId(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500/20"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500/20"
             >
               {employees.map((emp) => (
                 <option key={emp.id} value={emp.id}>
@@ -186,137 +273,139 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
             </select>
           </div>
 
+          {/* Choose OT Duration (+1 Hour, etc.) */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Timer className="w-3.5 h-3.5 text-slate-400" />
-              <span>2. Choose Overtime Duration (Alarm Rings After)</span>
+            <label className="block text-[11px] font-semibold text-slate-600">
+              Select Overtime Duration to Add:
             </label>
-
-            {/* Duration Pills */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {PRESET_DURATIONS.map((preset) => {
-                const isSelected = durationMinutes === preset.mins;
+              {OT_OPTIONS.map((opt) => {
+                const isSelected = otHours === opt.val;
                 return (
                   <button
-                    key={preset.mins}
+                    key={opt.val}
                     type="button"
-                    onClick={() => {
-                      setDurationMinutes(preset.mins);
-                      setCustomHours((preset.mins / 60).toString());
-                    }}
+                    onClick={() => setOtHours(opt.val)}
                     className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
                       isSelected
                         ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                     }`}
                   >
-                    <span>{preset.label}</span>
-                    {preset.popular && (
-                      <span className="block text-[9px] font-normal opacity-90">Recommended</span>
+                    <span>{opt.label}</span>
+                    {opt.popular && (
+                      <span className="block text-[9px] font-normal opacity-90">Most Common</span>
                     )}
                   </button>
                 );
               })}
             </div>
+          </div>
 
-            {/* Custom Duration Input */}
-            <div className="flex items-center gap-2 pt-1">
-              <span className="text-xs text-slate-500">Or custom hours:</span>
-              <input
-                type="number"
-                min="0.1"
-                max="24"
-                step="0.5"
-                value={customHours}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setCustomHours(e.target.value);
-                  if (!isNaN(val) && val > 0) {
-                    setDurationMinutes(Math.round(val * 60));
-                  }
-                }}
-                className="w-24 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
-              />
-              <span className="text-xs font-semibold text-slate-600">
-                hours ({durationMinutes} mins)
-              </span>
+          {/* Timing Mode: Extend from 5:30 PM vs From Now */}
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <label className="block text-[11px] font-semibold text-slate-700">
+              Alarm Schedule Timing:
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setTimingMode('from_shift_end')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  timingMode === 'from_shift_end'
+                    ? 'bg-white border-brand-500 text-brand-900 shadow-2xs font-bold'
+                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                }`}
+              >
+                <span className="block font-bold">Extend Shift End ({format12Hour(shiftSettings.shiftEndTime)})</span>
+                <span className="text-[10px] text-slate-500 block mt-0.5">
+                  Rings at <strong className="text-amber-700">{projectedOtTime}</strong> ({otHours}h OT)
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTimingMode('from_now')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  timingMode === 'from_now'
+                    ? 'bg-white border-brand-500 text-brand-900 shadow-2xs font-bold'
+                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                }`}
+              >
+                <span className="block font-bold">Countdown from Now</span>
+                <span className="text-[10px] text-slate-500 block mt-0.5">
+                  Rings after <strong className="text-amber-700">{otHours} hour(s)</strong> from now
+                </span>
+              </button>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">
-              Optional Note
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Packing overtime, unloading shipment"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-brand-500/20"
-            />
-          </div>
-
+          {/* Start OT Alarm Button */}
           <button
             type="submit"
             className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-all"
           >
             <Bell className="w-4 h-4 animate-bounce" />
             <span>
-              Start {durationMinutes >= 60 ? `${durationMinutes / 60} Hour` : `${durationMinutes} Mins`} Alarm
+              Start {otHours} Hour Overtime Alarm (Rings at {timingMode === 'from_shift_end' ? projectedOtTime : `${otHours}h from now`})
             </span>
           </button>
         </form>
 
-        {/* ACTIVE TIMERS LIST */}
+        {/* 3. ACTIVE OVERTIME ALARMS LIST */}
         <div className="space-y-2 pt-2 border-t border-slate-100">
           <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
-            <span>Active Overtime Timers ({timers.filter((t) => t.status === 'running' || t.status === 'ringing').length})</span>
+            <span>Running Alarms ({alarms.filter((a) => a.status === 'running' || a.status === 'ringing').length})</span>
           </h4>
 
-          {timers.filter((t) => t.status === 'running' || t.status === 'ringing').length === 0 ? (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-center text-xs text-slate-400">
-              No active timers running right now. Choose a worker and duration above to start an overtime alarm.
+          {alarms.filter((a) => a.status === 'running' || a.status === 'ringing').length === 0 ? (
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60 text-center text-xs text-slate-400">
+              No active overtime alarms running. Choose a worker and duration above to start an alarm.
             </div>
           ) : (
             <div className="space-y-2">
-              {timers
-                .filter((t) => t.status === 'running' || t.status === 'ringing')
-                .map((timer) => {
-                  const msRemaining = Math.max(0, timer.targetEndTime - now);
+              {alarms
+                .filter((a) => a.status === 'running' || a.status === 'ringing')
+                .map((alarm) => {
+                  const msRemaining = Math.max(0, alarm.targetEndTime - now);
                   const totalSec = Math.floor(msRemaining / 1000);
                   const hrs = Math.floor(totalSec / 3600);
                   const mins = Math.floor((totalSec % 3600) / 60);
                   const secs = totalSec % 60;
                   const timeFormatted = `${hrs > 0 ? `${hrs}h ` : ''}${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
-                  const isRinging = timer.status === 'ringing' || msRemaining === 0;
+                  const isRinging = alarm.status === 'ringing' || msRemaining === 0;
 
                   return (
                     <div
-                      key={timer.id}
+                      key={alarm.id}
                       className={`p-3 rounded-2xl border flex items-center justify-between gap-3 ${
                         isRinging
                           ? 'bg-rose-50 border-rose-300 animate-pulse text-rose-900'
                           : 'bg-amber-50/70 border-amber-200 text-amber-950'
                       }`}
                     >
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs">{timer.employeeName}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/80 border border-amber-300">
-                            {timer.overtimeHours}h OT
+                          <span className="font-bold text-xs truncate">{alarm.employeeName}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/90 border border-amber-300 shrink-0">
+                            +{alarm.overtimeHours}h OT
                           </span>
                         </div>
-                        <p className="text-[11px] font-mono font-bold text-amber-700 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{isRinging ? '🚨 TIME EXPIRED! RINGING' : `${timeFormatted} remaining`}</span>
+                        <p className="text-[11px] font-mono font-bold text-amber-800 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>
+                            {isRinging
+                              ? '🚨 RINGING! TIME IS UP'
+                              : `${timeFormatted} left (Alarm at ${alarm.scheduledTimeStr || 'Target'})`}
+                          </span>
                         </p>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => handleCancelTimer(timer.id)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white rounded-xl transition-colors"
-                        title="Cancel Timer"
+                        onClick={() => handleCancelAlarm(alarm.id)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white rounded-xl transition-colors shrink-0"
+                        title="Cancel Alarm"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -325,55 +414,6 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                 })}
             </div>
           )}
-        </div>
-
-        {/* DAILY ATTENDANCE REMINDER CONFIG */}
-        <div className="space-y-2 pt-2 border-t border-slate-100">
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>Daily Attendance Reminder</span>
-          </h4>
-
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-800">Daily Alarm Reminder</span>
-                <p className="text-[10px] text-slate-500">Chimes every day to remind you to mark attendance</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={reminderSettings.enabled}
-                  onChange={(e) =>
-                    setReminderSettings((prev) => ({ ...prev, enabled: e.target.checked }))
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
-              </label>
-            </div>
-
-            {reminderSettings.enabled && (
-              <div className="flex items-center gap-3 pt-1">
-                <span className="text-xs font-medium text-slate-600">Reminder Time:</span>
-                <input
-                  type="time"
-                  value={reminderSettings.time}
-                  onChange={(e) =>
-                    setReminderSettings((prev) => ({ ...prev, time: e.target.value }))
-                  }
-                  className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveReminder}
-                  className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors"
-                >
-                  Save Time
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

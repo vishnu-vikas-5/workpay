@@ -1,37 +1,40 @@
 // Web Audio API Synthesizer and Native Local Alarms for WorkPay
 
-export interface OvertimeTimer {
+export type AlarmType = 'shift_end' | 'overtime';
+
+export interface ActiveAlarm {
   id: string;
-  employeeId: string;
+  type: AlarmType;
+  employeeId?: string; // specific employee or 'all'
   employeeName: string;
   durationMinutes: number;
-  overtimeHours: number;
-  startTime: number; // Date.now()
-  targetEndTime: number; // Date.now() + durationMinutes * 60 * 1000
-  status: 'running' | 'ringing' | 'completed' | 'cancelled';
+  overtimeHours: number; // e.g. 1.0 for 1 hr
+  scheduledTimeStr?: string; // "17:30" (5:30 PM)
+  startTime: number; // timestamp ms
+  targetEndTime: number; // timestamp ms
+  status: 'running' | 'ringing' | 'completed' | 'dismissed';
   note?: string;
   createdAt: string;
 }
 
-export interface AttendanceReminderSettings {
+export interface ShiftAlarmSettings {
   enabled: boolean;
-  time: string; // "09:00"
+  shiftEndTime: string; // default "17:30" (5:30 PM)
   label: string;
   lastTriggeredDate?: string; // "YYYY-MM-DD"
 }
 
-const TIMERS_STORAGE_KEY = 'workpay_overtime_timers';
-const REMINDER_STORAGE_KEY = 'workpay_attendance_reminder';
+const ALARMS_STORAGE_KEY = 'workpay_active_alarms';
+const SHIFT_SETTINGS_KEY = 'workpay_shift_alarm_settings';
 
 class AlarmService {
   private audioCtx: AudioContext | null = null;
   private isRinging: boolean = false;
   private ringIntervalId: any = null;
   private vibrationIntervalId: any = null;
-  private timerCheckIntervalId: any = null;
-  private onAlarmTriggerCallback: ((timer: OvertimeTimer) => void) | null = null;
-  private onDailyReminderCallback: ((settings: AttendanceReminderSettings) => void) | null = null;
-  private onTimersUpdateCallback: (() => void) | null = null;
+  private backgroundTickerId: any = null;
+  private onAlarmTriggerCallback: ((alarm: ActiveAlarm) => void) | null = null;
+  private onAlarmsUpdateCallback: (() => void) | null = null;
 
   constructor() {
     this.initAudioContext();
@@ -62,7 +65,7 @@ class AlarmService {
   }
 
   // Play a single crisp, pleasant dual-tone alarm pulse (880Hz / 1046Hz)
-  private playBeepPulse() {
+  public playBeepPulse() {
     try {
       if (!this.audioCtx) {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -112,20 +115,20 @@ class AlarmService {
     // Immediately play first pulse
     this.playBeepPulse();
 
-    // Repeat pulse every 600ms
+    // Repeat pulse every 550ms like an alarm clock
     this.ringIntervalId = setInterval(() => {
       if (!this.isRinging) return;
       this.playBeepPulse();
-    }, 600);
+    }, 550);
 
-    // Vibration pattern on mobile APK (500ms vibration, 250ms silence)
+    // Vibration pattern on mobile APK (500ms vibration, 200ms silence, 500ms vibration)
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
-        navigator.vibrate([500, 250, 500, 250, 800]);
+        navigator.vibrate([500, 200, 500, 200, 800]);
         this.vibrationIntervalId = setInterval(() => {
           if (!this.isRinging) return;
-          navigator.vibrate([500, 250, 500, 250, 800]);
-        }, 2500);
+          navigator.vibrate([500, 200, 500, 200, 800]);
+        }, 2200);
       } catch (e) {}
     }
   }
@@ -152,7 +155,7 @@ class AlarmService {
   public testAlarmSound() {
     this.initAudioContext();
     this.playBeepPulse();
-    setTimeout(() => this.playBeepPulse(), 400);
+    setTimeout(() => this.playBeepPulse(), 350);
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate([200, 100, 200]);
@@ -179,7 +182,7 @@ class AlarmService {
           body,
           icon: '/favicon.ico',
           requireInteraction: true,
-          tag: 'workpay-overtime-alarm',
+          tag: 'workpay-alarm',
         });
       } catch (e) {
         console.warn('System notification error:', e);
@@ -188,163 +191,198 @@ class AlarmService {
   }
 
   // -------------------------------------------------------------
-  // Overtime Timers CRUD & Background Watcher
+  // Settings: Daily Shift End Alarm (e.g. 5:30 PM / 17:30)
   // -------------------------------------------------------------
 
-  public getOvertimeTimers(): OvertimeTimer[] {
+  public getShiftAlarmSettings(): ShiftAlarmSettings {
     try {
-      const raw = localStorage.getItem(TIMERS_STORAGE_KEY);
+      const raw = localStorage.getItem(SHIFT_SETTINGS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      enabled: true,
+      shiftEndTime: '17:30', // Default 5:30 PM
+      label: 'Daily Shift End Alarm (5:30 PM)',
+    };
+  }
+
+  public saveShiftAlarmSettings(settings: ShiftAlarmSettings) {
+    try {
+      localStorage.setItem(SHIFT_SETTINGS_KEY, JSON.stringify(settings));
+      this.onAlarmsUpdateCallback?.();
+    } catch (e) {}
+  }
+
+  // -------------------------------------------------------------
+  // Active Alarms & Overtime Extensions
+  // -------------------------------------------------------------
+
+  public getActiveAlarms(): ActiveAlarm[] {
+    try {
+      const raw = localStorage.getItem(ALARMS_STORAGE_KEY);
       return raw ? JSON.parse(raw) : [];
     } catch (e) {
       return [];
     }
   }
 
-  public saveOvertimeTimers(timers: OvertimeTimer[]) {
+  public saveActiveAlarms(alarms: ActiveAlarm[]) {
     try {
-      localStorage.setItem(TIMERS_STORAGE_KEY, JSON.stringify(timers));
-      this.onTimersUpdateCallback?.();
+      localStorage.setItem(ALARMS_STORAGE_KEY, JSON.stringify(alarms));
+      this.onAlarmsUpdateCallback?.();
     } catch (e) {}
   }
 
-  // Create and start a new Overtime Timer
-  public createOvertimeTimer(params: {
+  /**
+   * Schedule an Overtime Alarm for a worker.
+   * Can either:
+   * 1. Extend today's regular 5:30 PM shift end by X hours (e.g. 5:30 PM + 1h = 6:30 PM)
+   * 2. Or run a countdown timer of X hours from the current time.
+   */
+  public createOvertimeAlarm(params: {
     employeeId: string;
     employeeName: string;
-    durationMinutes: number;
+    overtimeHours: number; // e.g. 1.0 or 0.5 or 2.0
+    fromShiftEnd?: boolean; // if true, add to today's 5:30 PM
     note?: string;
-  }): OvertimeTimer {
+  }): ActiveAlarm {
     this.initAudioContext();
     this.requestNotificationPermission().catch(() => {});
 
     const now = Date.now();
-    const durationMs = Math.round(params.durationMinutes * 60 * 1000);
-    const overtimeHours = Math.round((params.durationMinutes / 60) * 100) / 100;
+    const durationMinutes = Math.round(params.overtimeHours * 60);
+    const durationMs = durationMinutes * 60 * 1000;
 
-    const newTimer: OvertimeTimer = {
-      id: `ot-timer-${now}-${Math.floor(Math.random() * 1000)}`,
+    let targetEndTime: number;
+    let scheduledTimeStr: string | undefined;
+
+    if (params.fromShiftEnd) {
+      const settings = this.getShiftAlarmSettings();
+      const [hStr, mStr] = settings.shiftEndTime.split(':');
+      const shiftDate = new Date();
+      shiftDate.setHours(parseInt(hStr, 10) || 17, parseInt(mStr, 10) || 30, 0, 0);
+
+      // Add overtime duration to shift end
+      targetEndTime = shiftDate.getTime() + durationMs;
+
+      // If target time has already passed today, start from now instead
+      if (targetEndTime <= now) {
+        targetEndTime = now + durationMs;
+      }
+
+      const targetD = new Date(targetEndTime);
+      scheduledTimeStr = targetD.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } else {
+      targetEndTime = now + durationMs;
+      const targetD = new Date(targetEndTime);
+      scheduledTimeStr = targetD.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    }
+
+    const newAlarm: ActiveAlarm = {
+      id: `ot-alarm-${now}-${Math.floor(Math.random() * 1000)}`,
+      type: 'overtime',
       employeeId: params.employeeId,
       employeeName: params.employeeName,
-      durationMinutes: params.durationMinutes,
-      overtimeHours,
+      durationMinutes,
+      overtimeHours: params.overtimeHours,
+      scheduledTimeStr,
       startTime: now,
-      targetEndTime: now + durationMs,
+      targetEndTime,
       status: 'running',
       note: params.note,
       createdAt: new Date().toISOString(),
     };
 
-    const timers = this.getOvertimeTimers();
-    timers.push(newTimer);
-    this.saveOvertimeTimers(timers);
-    return newTimer;
-  }
-
-  // Cancel or delete a timer
-  public cancelTimer(timerId: string) {
-    const timers = this.getOvertimeTimers().filter((t) => t.id !== timerId);
-    this.saveOvertimeTimers(timers);
-    this.stopAlarmSound();
-  }
-
-  // Mark a timer as completed or dismissed
-  public dismissTimer(timerId: string) {
-    this.stopAlarmSound();
-    const timers = this.getOvertimeTimers().map((t) =>
-      t.id === timerId ? { ...t, status: 'completed' as const } : t
+    const alarms = this.getActiveAlarms().filter(
+      (a) => !(a.employeeId === params.employeeId && a.status === 'running')
     );
-    this.saveOvertimeTimers(timers);
+    alarms.push(newAlarm);
+    this.saveActiveAlarms(alarms);
+    return newAlarm;
   }
 
-  // Snooze a timer by additional minutes (e.g. 10m)
-  public snoozeTimer(timerId: string, additionalMinutes: number = 10) {
+  // Cancel an alarm
+  public cancelAlarm(alarmId: string) {
+    const alarms = this.getActiveAlarms().filter((a) => a.id !== alarmId);
+    this.saveActiveAlarms(alarms);
     this.stopAlarmSound();
-    const timers = this.getOvertimeTimers().map((t) => {
-      if (t.id === timerId) {
-        const newEndTime = Date.now() + additionalMinutes * 60 * 1000;
+  }
+
+  // Mark an alarm completed/dismissed
+  public dismissAlarm(alarmId: string) {
+    this.stopAlarmSound();
+    const alarms = this.getActiveAlarms().map((a) =>
+      a.id === alarmId ? { ...a, status: 'completed' as const } : a
+    );
+    this.saveActiveAlarms(alarms);
+  }
+
+  // Snooze an alarm by 10 minutes
+  public snoozeAlarm(alarmId: string, snoozeMinutes: number = 10) {
+    this.stopAlarmSound();
+    const alarms = this.getActiveAlarms().map((a) => {
+      if (a.id === alarmId) {
+        const newEndTime = Date.now() + snoozeMinutes * 60 * 1000;
         return {
-          ...t,
+          ...a,
           status: 'running' as const,
           targetEndTime: newEndTime,
-          durationMinutes: t.durationMinutes + additionalMinutes,
-          overtimeHours: Math.round(((t.durationMinutes + additionalMinutes) / 60) * 100) / 100,
         };
       }
-      return t;
+      return a;
     });
-    this.saveOvertimeTimers(timers);
+    this.saveActiveAlarms(alarms);
   }
 
-  // -------------------------------------------------------------
-  // Daily Attendance Reminder
-  // -------------------------------------------------------------
-
-  public getDailyReminderSettings(): AttendanceReminderSettings {
-    try {
-      const raw = localStorage.getItem(REMINDER_STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return {
-      enabled: true,
-      time: '09:00',
-      label: 'Morning Shift Attendance Reminder',
-    };
-  }
-
-  public saveDailyReminderSettings(settings: AttendanceReminderSettings) {
-    try {
-      localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(settings));
-    } catch (e) {}
-  }
-
-  // -------------------------------------------------------------
-  // Subscription Listeners
-  // -------------------------------------------------------------
-
-  public onAlarmTrigger(cb: (timer: OvertimeTimer) => void) {
+  // Listeners
+  public onAlarmTrigger(cb: (alarm: ActiveAlarm) => void) {
     this.onAlarmTriggerCallback = cb;
   }
 
-  public onDailyReminder(cb: (settings: AttendanceReminderSettings) => void) {
-    this.onDailyReminderCallback = cb;
+  public onAlarmsUpdate(cb: () => void) {
+    this.onAlarmsUpdateCallback = cb;
   }
 
-  public onTimersUpdate(cb: () => void) {
-    this.onTimersUpdateCallback = cb;
-  }
-
-  // Periodic 1-second background ticker to check timers
+  // Periodic 1-second background ticker to check shift end and overtime alarms
   private startBackgroundTicker() {
-    if (this.timerCheckIntervalId) clearInterval(this.timerCheckIntervalId);
+    if (this.backgroundTickerId) clearInterval(this.backgroundTickerId);
 
-    this.timerCheckIntervalId = setInterval(() => {
+    this.backgroundTickerId = setInterval(() => {
       const now = Date.now();
-      const timers = this.getOvertimeTimers();
+      const alarms = this.getActiveAlarms();
       let hasChange = false;
 
-      // 1. Check running overtime timers
-      for (const t of timers) {
-        if (t.status === 'running' && now >= t.targetEndTime) {
-          t.status = 'ringing';
+      // 1. Check active overtime timers
+      for (const a of alarms) {
+        if (a.status === 'running' && now >= a.targetEndTime) {
+          a.status = 'ringing';
           hasChange = true;
           this.startAlarmSound();
           this.showNotification(
-            `⏰ Overtime Completed: ${t.employeeName}`,
-            `${t.employeeName} has completed ${t.overtimeHours}h overtime! Tap to mark attendance & record OT.`
+            `⏰ Overtime Finished: ${a.employeeName}`,
+            `${a.employeeName} completed ${a.overtimeHours}h overtime! Tap to mark attendance & record OT.`
           );
           if (this.onAlarmTriggerCallback) {
-            this.onAlarmTriggerCallback(t);
+            this.onAlarmTriggerCallback(a);
           }
         }
       }
 
       if (hasChange) {
-        this.saveOvertimeTimers(timers);
+        this.saveActiveAlarms(alarms);
       }
 
-      // 2. Check daily attendance reminder
-      const reminder = this.getDailyReminderSettings();
-      if (reminder.enabled && reminder.time) {
+      // 2. Check Daily Shift End Alarm (e.g. 5:30 PM)
+      const settings = this.getShiftAlarmSettings();
+      if (settings.enabled && settings.shiftEndTime) {
         const todayStr = new Date().toISOString().split('T')[0];
         const currentTimeStr = new Date().toLocaleTimeString('en-GB', {
           hour: '2-digit',
@@ -352,16 +390,36 @@ class AlarmService {
           hour12: false,
         });
 
-        if (currentTimeStr === reminder.time && reminder.lastTriggeredDate !== todayStr) {
-          reminder.lastTriggeredDate = todayStr;
-          this.saveDailyReminderSettings(reminder);
-          this.playBeepPulse();
+        // Trigger when current 24h time matches shift end time (e.g. "17:30") and hasn't fired today
+        if (currentTimeStr === settings.shiftEndTime && settings.lastTriggeredDate !== todayStr) {
+          settings.lastTriggeredDate = todayStr;
+          this.saveShiftAlarmSettings(settings);
+
+          const shiftEndAlarm: ActiveAlarm = {
+            id: `shift-end-${Date.now()}`,
+            type: 'shift_end',
+            employeeName: 'All Workers',
+            durationMinutes: 480, // 8 hours
+            overtimeHours: 0,
+            scheduledTimeStr: settings.shiftEndTime,
+            startTime: now,
+            targetEndTime: now,
+            status: 'ringing',
+            note: 'Daily Shift End: Mark Attendance or Add Overtime',
+            createdAt: new Date().toISOString(),
+          };
+
+          const updatedAlarms = [...this.getActiveAlarms(), shiftEndAlarm];
+          this.saveActiveAlarms(updatedAlarms);
+
+          this.startAlarmSound();
           this.showNotification(
-            '📋 WorkPay Attendance Reminder',
-            "It's time to mark today's worker shift attendance!"
+            '⏰ Shift End Alarm (5:30 PM)',
+            "Work shift ended! Time to mark today's worker attendance or add overtime."
           );
-          if (this.onDailyReminderCallback) {
-            this.onDailyReminderCallback(reminder);
+
+          if (this.onAlarmTriggerCallback) {
+            this.onAlarmTriggerCallback(shiftEndAlarm);
           }
         }
       }

@@ -66,30 +66,33 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     try {
       if (!fullName.trim()) throw new Error('Please enter the employee full name.');
       if (!phone.trim()) throw new Error('Please enter the employee phone number.');
-      if (!upiId.trim()) throw new Error('Please enter the UPI ID for payment.');
       const numericRate = typeof shiftRate === 'string' ? parseFloat(shiftRate) : shiftRate;
       if (isNaN(numericRate) || numericRate <= 0) throw new Error('Shift rate must be greater than zero.');
 
-      // Auto-generate email if empty
+      // Auto-generate clean valid email conforming to firestore.rules regex
+      const safePrefix = fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || `worker${Date.now().toString().slice(-4)}`;
       const cleanEmail =
-        email.trim() ||
-        `${fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '')}@workpay.io`;
+        email.trim() && email.includes('@')
+          ? email.trim()
+          : `${safePrefix.length >= 2 ? safePrefix : 'worker'}@workpay.io`;
 
       const hourlyWage = Math.round((numericRate / 8) * 100) / 100;
+      const cleanUpi = upiId.trim().length >= 3 ? upiId.trim() : undefined;
 
       if (employeeToEdit) {
-        const updated = {
+        const updated: Employee = {
           ...employeeToEdit,
           fullName: fullName.trim(),
           phone: phone.trim(),
           email: cleanEmail,
-          upiId: upiId.trim(),
+          upiId: cleanUpi,
           shiftRate: numericRate,
           hourlyWage,
           standardWorkingHours: 8,
           overtimeMultiplier: 1.0,
           department,
           designation,
+          dateOfJoining: employeeToEdit.dateOfJoining || new Date().toISOString().split('T')[0],
           status,
         };
         await updateEmployee(updated);
@@ -100,7 +103,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           fullName: fullName.trim(),
           phone: phone.trim(),
           email: cleanEmail,
-          upiId: upiId.trim(),
+          upiId: cleanUpi,
           shiftRate: numericRate,
           hourlyWage,
           standardWorkingHours: 8,
@@ -193,7 +196,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                UPI ID (for payments) <span className="text-rose-500">*</span>
+                UPI ID (Optional, for instant UPI payments)
               </label>
               <div className="relative">
                 <Smartphone className="w-4 h-4 text-brand-600 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -203,7 +206,6 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
                   className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                  required
                 />
               </div>
             </div>

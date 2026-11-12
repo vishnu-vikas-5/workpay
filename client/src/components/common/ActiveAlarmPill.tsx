@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Bell } from 'lucide-react';
-import { alarmService, OvertimeTimer } from '../../services/alarmService';
+import { alarmService, ActiveAlarm } from '../../services/alarmService';
 
 interface ActiveAlarmPillProps {
   onOpenModal: () => void;
 }
 
 export const ActiveAlarmPill: React.FC<ActiveAlarmPillProps> = ({ onOpenModal }) => {
-  const [timers, setTimers] = useState<OvertimeTimer[]>(alarmService.getOvertimeTimers());
+  const [alarms, setAlarms] = useState<ActiveAlarm[]>(alarmService.getActiveAlarms());
   const [now, setNow] = useState<number>(Date.now());
 
   useEffect(() => {
     const update = () => {
       setNow(Date.now());
-      setTimers(alarmService.getOvertimeTimers());
+      setAlarms(alarmService.getActiveAlarms());
     };
 
-    alarmService.onTimersUpdate(update);
+    alarmService.onAlarmsUpdate(update);
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const runningTimers = timers.filter((t) => t.status === 'running');
-  if (runningTimers.length === 0) return null;
+  const runningAlarms = alarms.filter((a) => a.status === 'running');
+  if (runningAlarms.length === 0) return null;
 
-  // Show the timer closest to expiry
-  const closest = runningTimers.sort((a, b) => a.targetEndTime - b.targetEndTime)[0];
+  // Closest alarm to expiry
+  const closest = runningAlarms.sort((a, b) => a.targetEndTime - b.targetEndTime)[0];
   const msLeft = Math.max(0, closest.targetEndTime - now);
   const totalSec = Math.floor(msLeft / 1000);
   const hrs = Math.floor(totalSec / 3600);
@@ -37,17 +37,18 @@ export const ActiveAlarmPill: React.FC<ActiveAlarmPillProps> = ({ onOpenModal })
     <button
       type="button"
       onClick={onOpenModal}
-      className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3.5 py-2 rounded-2xl shadow-lg shadow-amber-500/30 flex items-center gap-2 text-xs font-bold transition-all transform hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-2"
+      className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3.5 py-2 rounded-2xl shadow-xl shadow-amber-500/30 flex items-center gap-2.5 text-xs font-bold transition-all transform hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-2 border border-white/20"
+      title="View Active Alarms"
     >
       <div className="relative">
         <Clock className="w-4 h-4 animate-spin text-white" style={{ animationDuration: '4s' }} />
         <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white animate-ping" />
       </div>
       <div className="text-left font-mono">
-        <span className="block text-[10px] font-sans font-medium opacity-90">
+        <span className="block text-[10px] font-sans font-semibold opacity-90 truncate max-w-[120px]">
           OT: {closest.employeeName}
         </span>
-        <span>{timeFormatted} left</span>
+        <span className="text-xs font-extrabold">{timeFormatted} left</span>
       </div>
     </button>
   );

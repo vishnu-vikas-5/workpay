@@ -41,8 +41,14 @@ import {
 export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
   const result: any = {};
   for (const [key, val] of Object.entries(obj)) {
-    if (val !== undefined) {
-      if (val !== null && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
+    if (val !== undefined && val !== null) {
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        // Omit optional fields if empty string or too short to avoid rule rejection
+        if (key === 'upiId' && trimmed.length < 3) continue;
+        if ((key === 'avatar' || key === 'userId') && trimmed.length === 0) continue;
+        result[key] = trimmed;
+      } else if (typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
         result[key] = sanitizeForFirestore(val);
       } else {
         result[key] = val;
@@ -969,10 +975,31 @@ export const storageService = {
       // 1. Employees live listener
       const unsubEmp = onSnapshot(collection(db, 'employees'), (snap) => {
         const deletedIds = getDeletedIds();
+        const localEmps = getLocal<Employee[]>(KEYS.EMPLOYEES, []);
         const remoteEmps = snap.docs
           .map((d) => d.data() as Employee)
           .filter((e) => !deletedIds.has(e.id));
-        const cleanEmps = deduplicateEmployees(remoteEmps);
+        
+        // Authoritative remote list from Firestore
+        const map = new Map<string, Employee>();
+        remoteEmps.forEach((rem) => {
+          if (rem && !deletedIds.has(rem.id) && !isDummyEmployee(rem)) {
+            map.set(rem.id, rem);
+          }
+        });
+
+        // Preserve brand new local creations (<15s old) awaiting cloud roundtrip
+        const now = Date.now();
+        localEmps.forEach((loc) => {
+          if (loc && !deletedIds.has(loc.id) && !isDummyEmployee(loc) && !map.has(loc.id)) {
+            const ageMs = now - new Date(loc.createdAt || 0).getTime();
+            if (ageMs < 15000) {
+              map.set(loc.id, loc);
+            }
+          }
+        });
+
+        const cleanEmps = deduplicateEmployees(Array.from(map.values()));
         setLocal(KEYS.EMPLOYEES, cleanEmps);
         onDataUpdated();
       }, (err) => console.warn('Employees onSnapshot error:', err));

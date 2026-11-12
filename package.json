@@ -10,7 +10,7 @@
     "build:apk": "cd client && npm run build && npx cap copy && cd android && export JAVA_HOME=/opt/homebrew/opt/openjdk@17 && ./gradlew assembleDebug && cp app/build/outputs/apk/debug/app-debug.apk ../../WorkPay-debug.apk",
     "open:android": "cd client && npx cap open android",
     "test": "./server/node_modules/.bin/tsx --test tests/business-logic.test.ts",
-    "deploy": "cd client && npm run build && cd .. && npx firebase-tools deploy --only hosting --project workpay-app-14334",
+    "deploy": "cd client && npm run build && cd .. && npx firebase-tools deploy --only hosting --project workpay-app-14334 && npx firebase-tools deploy --only hosting --project billmate-6d1a2",
     "deploy:workpay": "cd client && npm run build && cd .. && npx firebase-tools deploy --only hosting --project workpay-app-14334",
     "deploy:billmate": "cd client && npm run build && cd .. && npx firebase-tools deploy --only hosting --project billmate-6d1a2",
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",
