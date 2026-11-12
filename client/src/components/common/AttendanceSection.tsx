@@ -17,12 +17,14 @@ import {
   Check,
   HandCoins,
   Sparkles,
+  Bell,
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import { Employee, Attendance, PaymentTransaction } from '../../types';
 import { formatINR } from '../../utils/utils';
 import { UpiQrModal } from './UpiQrModal';
 import { LendMoneyModal } from '../modals/LendMoneyModal';
+import { OvertimeAlarmModal } from '../modals/OvertimeAlarmModal';
 import { generateUpiIntentUri, getAppSpecificUpiLinks } from '../../utils/upiUtils';
 import { generatePaymentReceiptPDF } from '../../utils/receiptGenerator';
 import { GooglePayLogo, PhonePeLogo, PaytmLogo } from './PaymentBrandIcons';
@@ -83,6 +85,8 @@ export const AttendanceSection: React.FC = () => {
   const [weeklyDeductAdvance, setWeeklyDeductAdvance] = useState<boolean>(false);
   const [weeklyDeductionAmount, setWeeklyDeductionAmount] = useState<string | number>('');
   const [lendModalEmpId, setLendModalEmpId] = useState<string | null>(null);
+  const [isAlarmModalOpen, setIsAlarmModalOpen] = useState<boolean>(false);
+  const [alarmTargetEmpId, setAlarmTargetEmpId] = useState<string | undefined>(undefined);
   const [payoutSuccess, setPayoutSuccess] = useState<{
     employeeName: string;
     amount: number;
@@ -312,6 +316,19 @@ export const AttendanceSection: React.FC = () => {
               Weekly Pay
             </button>
           </div>
+
+          {/* Overtime Alarm & Reminder Action Button */}
+          <button
+            onClick={() => {
+              setAlarmTargetEmpId(undefined);
+              setIsAlarmModalOpen(true);
+            }}
+            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-900 border border-amber-300/80 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+            title="Set Overtime Alarm or Daily Reminder"
+          >
+            <Bell className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
+            <span>OT Alarm</span>
+          </button>
         </div>
       </div>
 
@@ -1028,6 +1045,13 @@ export const AttendanceSection: React.FC = () => {
           defaultEmployeeId={lendModalEmpId}
         />
       )}
+
+      {/* Overtime Alarm & Reminder Modal */}
+      <OvertimeAlarmModal
+        isOpen={isAlarmModalOpen}
+        onClose={() => setIsAlarmModalOpen(false)}
+        defaultEmployeeId={alarmTargetEmpId}
+      />
     </div>
   );
 };

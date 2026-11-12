@@ -240,10 +240,34 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addEmployee = async (empData: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<Employee> => {
     const newId = `emp-${Date.now()}`;
     const nextCodeNumber = 1000 + employees.length + 1;
+    const numericRate = typeof empData.shiftRate === 'number'
+      ? empData.shiftRate
+      : parseFloat(String(empData.shiftRate)) || 800;
+    const hourlyWage = Math.round((numericRate / 8) * 100) / 100;
+
+    // Guaranteed valid email matching firestore.rules regex
+    const namePrefix = empData.fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || `worker${nextCodeNumber}`;
+    const cleanEmail = empData.email && empData.email.includes('@')
+      ? empData.email.trim()
+      : `${namePrefix}@workpay.io`;
+
     const newEmployee: Employee = {
       ...empData,
       id: newId,
-      employeeCode: empData.employeeCode || `WP-EMP-${nextCodeNumber}`,
+      employeeCode: empData.employeeCode?.trim() || `WP-EMP-${nextCodeNumber}`,
+      fullName: empData.fullName.trim(),
+      phone: empData.phone.trim(),
+      email: cleanEmail,
+      department: empData.department?.trim() || 'Warehouse & Logistics',
+      designation: empData.designation?.trim() || 'Shift Worker',
+      dateOfJoining: empData.dateOfJoining || new Date().toISOString().split('T')[0],
+      shiftRate: numericRate,
+      hourlyWage,
+      standardWorkingHours: 8,
+      overtimeMultiplier: 1.0,
+      upiId: empData.upiId?.trim() || undefined,
+      advanceBalance: typeof empData.advanceBalance === 'number' ? empData.advanceBalance : 0,
+      status: empData.status || 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -264,17 +288,44 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateEmployee = async (emp: Employee) => {
-    // Optimistic UI update
-    setEmployees((prev) => prev.map((e) => (e.id === emp.id ? emp : e)));
+    const numericRate = typeof emp.shiftRate === 'number'
+      ? emp.shiftRate
+      : parseFloat(String(emp.shiftRate)) || 800;
+    const hourlyWage = Math.round((numericRate / 8) * 100) / 100;
+    const namePrefix = emp.fullName.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'worker';
+    const cleanEmail = emp.email && emp.email.includes('@')
+      ? emp.email.trim()
+      : `${namePrefix}@workpay.io`;
 
-    await storageService.saveEmployee(emp);
+    const sanitized: Employee = {
+      ...emp,
+      fullName: emp.fullName.trim(),
+      phone: emp.phone.trim(),
+      email: cleanEmail,
+      department: emp.department?.trim() || 'Warehouse & Logistics',
+      designation: emp.designation?.trim() || 'Shift Worker',
+      dateOfJoining: emp.dateOfJoining || new Date().toISOString().split('T')[0],
+      shiftRate: numericRate,
+      hourlyWage,
+      standardWorkingHours: 8,
+      overtimeMultiplier: 1.0,
+      upiId: emp.upiId?.trim() || undefined,
+      advanceBalance: typeof emp.advanceBalance === 'number' ? emp.advanceBalance : 0,
+      status: emp.status || 'active',
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Optimistic UI update
+    setEmployees((prev) => prev.map((e) => (e.id === sanitized.id ? sanitized : e)));
+
+    await storageService.saveEmployee(sanitized);
     await storageService.logAction(
       'EMPLOYEE_UPDATED',
       'employee',
-      emp.id,
+      sanitized.id,
       user?.name || 'Admin',
       user?.role || 'admin',
-      { name: emp.fullName, status: emp.status }
+      { name: sanitized.fullName, status: sanitized.status }
     );
   };
 

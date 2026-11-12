@@ -120,8 +120,7 @@ export function isDummyEmployee(emp: Partial<Employee>): boolean {
  */
 export function deduplicateEmployees(list: Employee[]): Employee[] {
   const seenIds = new Set<string>();
-  const seenPhones = new Set<string>();
-  const seenUpis = new Set<string>();
+  const seenNamePhones = new Set<string>();
   const result: Employee[] = [];
 
   // Sort list to prioritize records with newer updatedAt or higher/updated shiftRate
@@ -136,18 +135,17 @@ export function deduplicateEmployees(list: Employee[]): Employee[] {
     if (isDummyEmployee(emp)) continue;
 
     const id = emp.id;
+    const name = (emp.fullName || '').trim().toLowerCase();
     const digits = (emp.phone || '').replace(/\D/g, '');
     const phone = digits.length >= 10 ? digits.slice(-10) : digits;
-    const upi = (emp.upiId || '').trim().toLowerCase();
+    const namePhoneKey = `${name}_${phone}`;
 
     // Check if duplicate of an already accepted worker by unique identity
     if (id && seenIds.has(id)) continue;
-    if (phone && phone.length === 10 && seenPhones.has(phone)) continue;
-    if (upi && seenUpis.has(upi)) continue;
+    if (name && phone && phone.length === 10 && seenNamePhones.has(namePhoneKey)) continue;
 
     if (id) seenIds.add(id);
-    if (phone && phone.length === 10) seenPhones.add(phone);
-    if (upi) seenUpis.add(upi);
+    if (name && phone && phone.length === 10) seenNamePhones.add(namePhoneKey);
 
     result.push(emp);
   }
@@ -309,6 +307,7 @@ export const storageService = {
   },
 
   saveEmployee: async (employee: Employee): Promise<void> => {
+    unmarkDeletedId(employee.id);
     const list = getLocal<Employee[]>(KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
     const index = list.findIndex((e) => e.id === employee.id);
     let updated: Employee[];
@@ -321,11 +320,13 @@ export const storageService = {
     const clean = deduplicateEmployees(updated);
     setLocal(KEYS.EMPLOYEES, clean);
 
-    // Background Firestore write (never blocks UI)
+    // Reliable Firestore write with cloud unmark
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'employees', employee.id), sanitizeForFirestore(employee)).catch((e) => {
-        console.warn('Firestore background saveEmployee error:', e);
-      });
+      try {
+        await setDoc(doc(db, 'employees', employee.id), sanitizeForFirestore(employee));
+      } catch (e) {
+        console.warn('Firestore saveEmployee error:', e);
+      }
     }
   },
 

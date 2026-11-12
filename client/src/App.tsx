@@ -9,12 +9,17 @@ import {
   LogOut,
   Smartphone,
   RefreshCw,
+  Bell,
+  Clock,
 } from 'lucide-react';
 import { QuickPayConsole } from './components/common/QuickPayConsole';
 import { AttendanceSection } from './components/common/AttendanceSection';
 import { PaymentHistorySection } from './components/common/PaymentHistorySection';
 import { EmployeeModal } from './components/modals/EmployeeModal';
 import { ManageEmployeesModal } from './components/modals/ManageEmployeesModal';
+import { OvertimeAlarmModal } from './components/modals/OvertimeAlarmModal';
+import { RingingAlarmModal } from './components/common/RingingAlarmModal';
+import { ActiveAlarmPill } from './components/common/ActiveAlarmPill';
 import { Login } from './pages/Login';
 import { DownloadAppPage } from './pages/DownloadAppPage';
 import { Employee } from './types';
@@ -28,6 +33,7 @@ export const App: React.FC = () => {
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   const [isManageWorkersOpen, setIsManageWorkersOpen] = useState(false);
+  const [isOvertimeAlarmOpen, setIsOvertimeAlarmOpen] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
   const handleManualSync = async () => {
@@ -221,6 +227,16 @@ export const App: React.FC = () => {
               <span>Get APK</span>
             </button>
 
+            {/* Overtime Alarm / Reminder Trigger */}
+            <button
+              onClick={() => setIsOvertimeAlarmOpen(true)}
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200/90 transition-colors flex items-center gap-1 sm:gap-1.5 shadow-2xs"
+              title="Set Overtime Alarm or Reminder"
+            >
+              <Bell className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
+              <span className="hidden sm:inline">OT Alarm</span>
+            </button>
+
             {/* Workers Roster Modal */}
             <button
               onClick={() => setIsManageWorkersOpen(true)}
@@ -284,7 +300,7 @@ export const App: React.FC = () => {
       </footer>
 
       {/* Fixed Native-Style Bottom Navigation for Mobile Devices */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-1 px-1 grid grid-cols-4 md:hidden pb-safe shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-1 px-1 grid grid-cols-5 md:hidden pb-safe shadow-lg">
         <button
           onClick={() => setActiveTab('quickpay')}
           className={`flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl transition-colors ${
@@ -316,6 +332,14 @@ export const App: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setIsOvertimeAlarmOpen(true)}
+          className="flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl text-amber-600 hover:text-amber-700 font-bold"
+        >
+          <Bell className="w-4 h-4 animate-bounce" />
+          <span className="text-[10px] leading-tight">Alarm</span>
+        </button>
+
+        <button
           onClick={() => setIsManageWorkersOpen(true)}
           className="flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl text-slate-400 hover:text-slate-700 font-medium"
         >
@@ -323,6 +347,18 @@ export const App: React.FC = () => {
           <span className="text-[10px] leading-tight">Workers</span>
         </button>
       </nav>
+
+      {/* Floating Active Overtime Timer Pill */}
+      <ActiveAlarmPill onOpenModal={() => setIsOvertimeAlarmOpen(true)} />
+
+      {/* Real-Time Ringing Alarm Pop-up Modal */}
+      <RingingAlarmModal />
+
+      {/* Global Overtime Alarm & Reminder Modal */}
+      <OvertimeAlarmModal
+        isOpen={isOvertimeAlarmOpen}
+        onClose={() => setIsOvertimeAlarmOpen(false)}
+      />
 
       {/* Global Add / Edit Employee Modal */}
       <EmployeeModal

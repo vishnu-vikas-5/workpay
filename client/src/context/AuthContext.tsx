@@ -86,10 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (fbUser) {
         await handleFirebaseUserSync(fbUser);
       } else {
-        const saved = localStorage.getItem('workpay_auth_user');
-        if (!saved) {
-          setUser(null);
-        }
+        setUser(null);
+        localStorage.removeItem('workpay_auth_user');
       }
       setAuthLoading(false);
     });
@@ -118,7 +116,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: 'active',
           createdAt: new Date().toISOString(),
         };
-        await setDoc(userRef, profile);
+        const cleanProfile: any = {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          status: profile.status,
+          createdAt: profile.createdAt,
+        };
+        if (profile.avatarUrl) cleanProfile.avatarUrl = profile.avatarUrl;
+        await setDoc(userRef, cleanProfile);
       }
 
       setUser(profile);
@@ -256,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAuthenticated = Boolean(user || firebaseUser);
+  const isAuthenticated = Boolean(isFirebaseConfigured ? firebaseUser : (user || firebaseUser));
   const isCloudAuthenticated = Boolean(firebaseUser);
 
   return (
