@@ -68,7 +68,7 @@ public class NativeAlarmPlugin extends Plugin {
 
     @PluginMethod
     public void stopAlarm(PluginCall call) {
-        AlarmRingtoneService.stopAlarm(getContext());
+        AlarmSoundPlayer.stop();
         call.resolve();
     }
 
@@ -145,7 +145,7 @@ public class NativeAlarmPlugin extends Plugin {
         }
 
         cancelAlarmExact(getContext(), id);
-        AlarmRingtoneService.stopAlarm(getContext());
+        AlarmSoundPlayer.stop();
         call.resolve();
     }
 
@@ -194,14 +194,29 @@ public class NativeAlarmPlugin extends Plugin {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            // Use setAlarmClock for maximum priority (fires even during deep Doze sleep)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                AlarmManager.AlarmClockInfo clockInfo = new AlarmManager.AlarmClockInfo(triggerTimeMs, showPendingIntent);
-                am.setAlarmClock(clockInfo, operationIntent);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTimeMs, operationIntent);
-            } else {
-                am.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs, operationIntent);
+            // Attempt exact alarm clock schedule with fallbacks to avoid SecurityException
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (am.canScheduleExactAlarms()) {
+                        AlarmManager.AlarmClockInfo clockInfo = new AlarmManager.AlarmClockInfo(triggerTimeMs, showPendingIntent);
+                        am.setAlarmClock(clockInfo, operationIntent);
+                    } else {
+                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTimeMs, operationIntent);
+                    }
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    AlarmManager.AlarmClockInfo clockInfo = new AlarmManager.AlarmClockInfo(triggerTimeMs, showPendingIntent);
+                    am.setAlarmClock(clockInfo, operationIntent);
+                } else {
+                    am.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs, operationIntent);
+                }
+            } catch (SecurityException se) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTimeMs, operationIntent);
+                    } else {
+                        am.set(AlarmManager.RTC_WAKEUP, triggerTimeMs, operationIntent);
+                    }
+                } catch (Exception ignored) {}
             }
 
             // Save alarm specification to SharedPreferences for device reboot recovery

@@ -432,6 +432,10 @@ class AlarmService {
 
   public saveShiftAlarmSettings(settings: ShiftAlarmSettings) {
     try {
+      const current = this.getShiftAlarmSettings();
+      if (current.shiftEndTime !== settings.shiftEndTime) {
+        settings.lastTriggeredDate = undefined;
+      }
       localStorage.setItem(SHIFT_SETTINGS_KEY, JSON.stringify(settings));
       this.onAlarmsUpdateCallback?.();
       this.scheduleDailyShiftNativeAlarm(settings).catch(() => {});
@@ -452,12 +456,12 @@ class AlarmService {
       const target = new Date();
       target.setHours(parseInt(hStr, 10) || 17, parseInt(mStr, 10) || 30, 0, 0);
 
-      // If today's time has already passed, schedule for tomorrow
-      if (target.getTime() <= Date.now()) {
+      // If today's time has already passed by more than 10 seconds, schedule for tomorrow
+      if (target.getTime() <= Date.now() - 10000) {
         target.setDate(target.getDate() + 1);
       }
 
-      // High-priority Android AlarmManager with AlarmRingtoneService & FullScreenIntent
+      // High-priority Android AlarmManager with AlarmSoundPlayer & FullScreenIntent
       await NativeAlarm.scheduleAlarm({
         id: 'shift_end_daily',
         triggerTimeMs: target.getTime(),
@@ -558,8 +562,10 @@ class AlarmService {
     this.requestNotificationPermission().catch(() => {});
 
     const now = Date.now();
-    const durationMinutes = Math.round(params.overtimeHours * 60);
-    const durationMs = durationMinutes * 60 * 1000;
+    // Allow fractional hours for quick tests (e.g. 0.0167h = 1 min)
+    const durationMs = Math.max(15000, Math.round(params.overtimeHours * 60 * 60 * 1000));
+    const durationMinutes = Math.max(1, Math.round(durationMs / 60000));
+    const actualOvertimeHours = params.overtimeHours < 0.1 ? 1.0 : params.overtimeHours;
 
     let targetEndTime: number;
     let scheduledTimeStr: string | undefined;
@@ -600,7 +606,7 @@ class AlarmService {
       employeeId: params.employeeId,
       employeeName: params.employeeName,
       durationMinutes,
-      overtimeHours: params.overtimeHours,
+      overtimeHours: actualOvertimeHours,
       scheduledTimeStr,
       startTime: now,
       targetEndTime,
@@ -719,10 +725,13 @@ class AlarmService {
           hour12: false,
         });
 
-        // Trigger when current 24h time matches shift end time (e.g. "17:30") and hasn't fired today
-        if (currentTimeStr === settings.shiftEndTime && settings.lastTriggeredDate !== todayStr) {
-          settings.lastTriggeredDate = todayStr;
-          this.saveShiftAlarmSettings(settings);
+        // Trigger when current 24h time matches shift end time (e.g. "17:30") and hasn't fired for this specific time today
+        const triggerKey = `${todayStr}_${settings.shiftEndTime}`;
+        if (currentTimeStr === settings.shiftEndTime && settings.lastTriggeredDate !== triggerKey) {
+          settings.lastTriggeredDate = triggerKey;
+          try {
+            localStorage.setItem(SHIFT_SETTINGS_KEY, JSON.stringify(settings));
+          } catch (e) {}
 
           const shiftEndAlarm: ActiveAlarm = {
             id: `shift-end-${Date.now()}`,

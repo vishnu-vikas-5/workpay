@@ -127,6 +127,8 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
   })();
 
   const OT_OPTIONS = [
+    { label: '⚡ 1 Min Test', val: 0.0167, isTest: true },
+    { label: '⚡ 2 Min Test', val: 0.0333, isTest: true },
     { label: '+30 Mins (0.5h)', val: 0.5 },
     { label: '+1 Hour (1.0h)', val: 1.0, popular: true },
     { label: '+1.5 Hours', val: 1.5 },
@@ -315,7 +317,12 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                   <button
                     key={opt.val}
                     type="button"
-                    onClick={() => setOtHours(opt.val)}
+                    onClick={() => {
+                      setOtHours(opt.val);
+                      if ((opt as any).isTest) {
+                        setTimingMode('from_now');
+                      }
+                    }}
                     className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
                       isSelected
                         ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
@@ -377,7 +384,7 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
           >
             <Bell className="w-4 h-4 animate-bounce" />
             <span>
-              Start {otHours} Hour Overtime Alarm (Rings at {timingMode === 'from_shift_end' ? projectedOtTime : `${otHours}h from now`})
+              Start {otHours < 0.1 ? (otHours < 0.02 ? '1 Min Test' : '2 Min Test') : `${otHours} Hour`} Overtime Alarm (Rings {timingMode === 'from_shift_end' ? `at ${projectedOtTime}` : `in ${Math.round(otHours * 60)} min(s)`})
             </span>
           </button>
         </form>

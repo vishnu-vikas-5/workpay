@@ -1,14 +1,22 @@
 package io.workpay.app;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.PowerManager;
+import androidx.core.app.NotificationCompat;
 
 public class AlarmReceiver extends BroadcastReceiver {
+    public static final String CHANNEL_ID = "workpay_alarm_channel";
     public static final String ACTION_ALARM_TRIGGER = "io.workpay.app.ALARM_TRIGGER";
     public static final String ACTION_STOP_ALARM = "io.workpay.app.STOP_ALARM";
-    public static final String ACTION_OPEN_ALARM = "io.workpay.app.OPEN_ALARM";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -16,14 +24,20 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         String action = intent.getAction();
 
-        // Handle user clicking STOP ALARM in the notification
+        // 1. Handle user clicking "STOP ALARM" button in the notification
         if (ACTION_STOP_ALARM.equals(action)) {
-            AlarmRingtoneService.stopAlarm(context);
+            AlarmSoundPlayer.stop();
+            int notifId = intent.getIntExtra("notifId", 8888);
+            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                nm.cancel(notifId);
+                nm.cancel(8888);
+            }
             NativeAlarmPlugin.notifyAlarmDismissed();
             return;
         }
 
-        // Handle phone reboot recovery
+        // 2. Handle phone reboot recovery
         if (Intent.ACTION_BOOT_COMPLETED.equals(action) ||
             "android.intent.action.QUICKBOOT_POWERON".equals(action) ||
             "com.htc.intent.action.QUICKBOOT_POWERON".equals(action)) {
@@ -31,18 +45,17 @@ public class AlarmReceiver extends BroadcastReceiver {
             return;
         }
 
-        // Acquire WakeLock to turn on screen and prevent sleeping during alarm trigger
+        // 3. Acquire temporary WakeLock to wake the phone display
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        PowerManager.WakeLock wakeLock = null;
         try {
             if (pm != null) {
-                wakeLock = pm.newWakeLock(
+                PowerManager.WakeLock wakeLock = pm.newWakeLock(
                     PowerManager.SCREEN_BRIGHT_WAKE_LOCK |
                     PowerManager.ACQUIRE_CAUSES_WAKEUP |
                     PowerManager.ON_AFTER_RELEASE,
-                    "WorkPay:AlarmWakeLock"
+                    "WorkPay:AlarmReceiverWakeLock"
                 );
-                wakeLock.acquire(45000); // Hold for 45s
+                wakeLock.acquire(45000);
             }
         } catch (Exception ignored) {}
 
@@ -55,10 +68,51 @@ public class AlarmReceiver extends BroadcastReceiver {
         double overtimeHours = intent.getDoubleExtra("overtimeHours", 0.0);
         boolean repeatsDaily = intent.getBooleanExtra("repeatsDaily", false);
 
-        // 1. Start continuous looping alarm sound and vibration in Foreground Service
-        AlarmRingtoneService.startAlarm(context, intent);
+        if (title == null || title.isEmpty()) {
+            title = "⏰ WorkPay Alarm Ringing!";
+        }
+        if (body == null || body.isEmpty()) {
+            body = "Shift or overtime complete! Tap to open WorkPay.";
+        }
 
-        // 2. Prepare Intent to launch MainActivity in full screen
+        int notifId = 8888;
+        if (alarmId != null) {
+            notifId = Math.abs(alarmId.hashCode() % 100000) + 1000;
+        }
+
+        // 4. Start continuous looping audio and vibration immediately!
+        AlarmSoundPlayer.play(context);
+
+        // 5. Ensure high-priority Notification Channel exists
+        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        Uri alarmSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        if (alarmSoundUri == null) {
+            alarmSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && nm != null) {
+            NotificationChannel channel = nm.getNotificationChannel(CHANNEL_ID);
+            if (channel == null) {
+                channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "WorkPay Shift & Overtime Alarms",
+                    NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Critical alarm alerts for shift completion and overtime tracking");
+                channel.enableVibration(true);
+                channel.setVibrationPattern(new long[]{0, 800, 300, 800, 300});
+                AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build();
+                channel.setSound(alarmSoundUri, audioAttributes);
+                channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+                channel.setBypassDnd(true);
+                nm.createNotificationChannel(channel);
+            }
+        }
+
+        // 6. Build Intent to open MainActivity
         Intent openAppIntent = new Intent(context, MainActivity.class);
         openAppIntent.setAction(Intent.ACTION_MAIN);
         openAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -76,15 +130,54 @@ public class AlarmReceiver extends BroadcastReceiver {
         openAppIntent.putExtra("employeeName", employeeName);
         openAppIntent.putExtra("overtimeHours", overtimeHours);
 
-        // 3. Try to pop up the app directly on screen
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(
+            context,
+            notifId,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // 7. Stop Action Intent
+        Intent stopIntent = new Intent(context, AlarmReceiver.class);
+        stopIntent.setAction(ACTION_STOP_ALARM);
+        stopIntent.putExtra("notifId", notifId);
+        PendingIntent stopPendingIntent = PendingIntent.getBroadcast(
+            context,
+            notifId + 1,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // 8. Post the visible notification with Action Buttons
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setSound(alarmSoundUri)
+            .setVibrate(new long[]{0, 800, 300, 800, 300})
+            .setFullScreenIntent(openAppPendingIntent, true)
+            .setContentIntent(openAppPendingIntent)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "STOP ALARM", stopPendingIntent)
+            .addAction(R.mipmap.ic_launcher, "OPEN APP", openAppPendingIntent);
+
+        if (nm != null) {
+            nm.notify(notifId, builder.build());
+        }
+
+        // 9. Attempt direct activity start (works if device is unlocked or user granted Appear on Top)
         try {
             context.startActivity(openAppIntent);
         } catch (Exception ignored) {}
 
-        // 4. Notify plugin if app is already in memory
+        // 10. Pass alarm to NativeAlarmPlugin if webview is currently alive
         NativeAlarmPlugin.setPendingAlarm(openAppIntent);
 
-        // 5. If daily repeating alarm (5:30 PM shift end), schedule the next iteration 24 hours later
+        // 11. If repeating daily alarm (5:30 PM shift end), schedule next iteration 24 hours later
         if (repeatsDaily && alarmId != null) {
             long nextDayMs = System.currentTimeMillis() + (24L * 60L * 60L * 1000L);
             NativeAlarmPlugin.scheduleAlarmExact(
