@@ -21,16 +21,16 @@ export default {
           950: '#1e1b4b',
         },
         sand: {
-          50: '#FDFBF7',
-          100: '#FAF6EE',
-          200: '#EBE2CC', // Primary Warm Cream
-          300: '#DED6C1', // Soft Beige
-          400: '#CFC6B1', // Warm Muted Sand
-          500: '#B7B09E', // Deep Taupe
-          600: '#968E7C',
-          700: '#736B5C',
-          800: '#4F4A3E',
-          900: '#302C25',
+          50: '#EBE2CC',
+          100: '#EBE2CC',
+          200: '#EBE2CC', // #EBE2CC - Canvas Base Screen
+          300: '#DED6C1', // #DED6C1 - Main Card & Surface
+          400: '#CFC6B1', // #CFC6B1 - Inner Boxes & Dividers
+          500: '#B7B09E', // #B7B09E - Borders & Accent Accents
+          600: '#8C8472',
+          700: '#635B4E',
+          800: '#453F35',
+          900: '#302C25', // Deep Espresso for Text & Primary Buttons
           950: '#1B1915',
         },
         success: {

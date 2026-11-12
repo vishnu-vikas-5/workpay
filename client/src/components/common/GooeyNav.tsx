@@ -41,12 +41,12 @@ const THEMES: Record<string, Record<string, string>> = {
     '--gn-muted': 'rgba(244, 244, 245, 0.62)'
   },
   light: {
-    '--gn-frame': 'rgba(245, 240, 230, 0.92)', // Warm linen #EBE2CC frosted glass
-    '--gn-frame-edge': 'rgba(207, 198, 177, 0.65)', // #CFC6B1
-    '--gn-frame-highlight': 'rgba(255, 255, 255, 0.95)',
+    '--gn-frame': 'rgba(222, 214, 193, 0.95)', // #DED6C1 warm sand frame
+    '--gn-frame-edge': 'rgba(183, 176, 158, 0.85)', // #B7B09E
+    '--gn-frame-highlight': 'rgba(235, 226, 204, 0.9)', // #EBE2CC
     '--gn-frame-shadow': '0 20px 45px -15px rgba(48, 44, 37, 0.25), 0 6px 16px -6px rgba(48, 44, 37, 0.15)',
     '--gn-ink': '#302C25',
-    '--gn-muted': 'rgba(79, 74, 62, 0.78)'
+    '--gn-muted': 'rgba(48, 44, 37, 0.72)'
   }
 };
 
@@ -287,6 +287,9 @@ export const GooeyNav: React.FC<GooeyNavProps> = ({
   settingsRef.current = settings;
 
   const select = (index: number) => {
+    if (index !== current) {
+      engineRef.current?.go(index);
+    }
     onChange?.(index, items[index]);
     if (index === current) return;
     if (activeIndex === undefined) setInnerIndex(index);

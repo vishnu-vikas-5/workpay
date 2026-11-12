@@ -139,27 +139,27 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-xl bg-[#DED6C1] rounded-3xl shadow-2xl border border-[#CFC6B1] p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col text-[#302C25]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-sand-300/70">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#CFC6B1]">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-sand-200 text-sand-900 flex items-center justify-center border border-sand-300 shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-[#EBE2CC] text-[#302C25] flex items-center justify-center border border-[#CFC6B1] shadow-xs">
               <HandCoins className="w-5 h-5 text-amber-700" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-sand-950 flex items-center gap-1.5">
+              <h3 className="text-base font-bold text-[#302C25] flex items-center gap-1.5">
                 <span>Worker Lending & Advances</span>
-                <span className="text-[10px] bg-sand-200 text-sand-900 font-bold px-2 py-0.5 rounded-full border border-sand-300">
+                <span className="text-[10px] bg-[#EBE2CC] text-[#302C25] font-bold px-2 py-0.5 rounded-full border border-[#CFC6B1]">
                   Khata
                 </span>
               </h3>
-              <p className="text-xs text-sand-600">Lend money now & auto-reduce from upcoming salary</p>
+              <p className="text-xs text-[#635B4E]">Lend money now & auto-reduce from upcoming salary</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-sand-600 hover:text-sand-950 hover:bg-sand-200 transition-colors"
+            className="p-2 rounded-full text-[#635B4E] hover:text-[#302C25] hover:bg-[#EBE2CC] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -167,23 +167,23 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
 
         {/* Success Banner */}
         {successToast && (
-          <div className="my-2 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="my-2 p-2.5 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>{successToast}</span>
           </div>
         )}
 
         {/* Employee Selector Bar */}
-        <div className="mt-3 p-3 bg-[#F5EFE3] rounded-2xl border border-sand-300">
+        <div className="mt-3 p-3 bg-[#EBE2CC] rounded-2xl border border-[#CFC6B1]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex-1">
-              <label className="block text-[11px] font-bold text-sand-700 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-bold text-[#635B4E] uppercase tracking-wider mb-1">
                 Select Worker
               </label>
               <select
                 value={selectedEmpId}
                 onChange={(e) => setSelectedEmpId(e.target.value)}
-                className="w-full px-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-bold text-sand-950 focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
+                className="w-full px-3 py-2 bg-[#DED6C1] border border-[#CFC6B1] rounded-xl text-xs font-bold text-[#302C25] focus:ring-2 focus:ring-[#B7B09E]"
               >
                 {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
@@ -194,9 +194,9 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
             </div>
 
             {/* Current Balance Display */}
-            <div className="bg-[#FAF6EE] px-3.5 py-2 rounded-xl border border-sand-300 shadow-2xs flex sm:flex-col justify-between items-center sm:items-end">
-              <span className="text-[10px] uppercase font-bold text-sand-500">Total Outstanding</span>
-              <span className={`text-base font-black ${currentBalance > 0 ? 'text-amber-700' : 'text-sand-800'}`}>
+            <div className="bg-[#DED6C1] px-3.5 py-2 rounded-xl border border-[#CFC6B1] shadow-2xs flex sm:flex-col justify-between items-center sm:items-end">
+              <span className="text-[10px] uppercase font-bold text-[#736B5C]">Total Outstanding</span>
+              <span className={`text-base font-black ${currentBalance > 0 ? 'text-amber-800' : 'text-[#302C25]'}`}>
                 {formatINR(currentBalance)}
               </span>
             </div>

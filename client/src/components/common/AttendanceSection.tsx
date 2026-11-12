@@ -253,18 +253,18 @@ export const AttendanceSection: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#FAF6EE] backdrop-blur-md rounded-3xl border border-sand-300 shadow-[0_12px_32px_rgba(183,176,158,0.25)] p-3.5 sm:p-6 space-y-4 sm:space-y-5">
+    <div className="bg-[#DED6C1] rounded-3xl border border-[#CFC6B1] shadow-[0_12px_32px_rgba(183,176,158,0.3)] p-3.5 sm:p-6 space-y-4 sm:space-y-5 text-[#302C25]">
       {/* Top Banner & Week Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-sand-300/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-[#CFC6B1]">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100/70 text-emerald-900 text-[11px] font-bold border border-emerald-300/80 mb-1">
-            <CalendarDays className="w-3 h-3 text-emerald-700" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EBE2CC] text-[#302C25] text-[11px] font-bold border border-[#CFC6B1] mb-1">
+            <CalendarDays className="w-3 h-3 text-[#302C25]" />
             <span>Attendance & Weekly Payroll</span>
           </div>
-          <h2 className="text-base sm:text-xl font-black text-sand-950 tracking-tight">
+          <h2 className="text-base sm:text-xl font-black text-[#302C25] tracking-tight">
             Daily Attendance & Weekly Payout
           </h2>
-          <p className="text-[11px] sm:text-xs text-sand-600">
+          <p className="text-[11px] sm:text-xs text-[#635B4E]">
             Mark daily worker attendance & OT; settle wages directly via UPI at week end.
           </p>
         </div>
@@ -272,21 +272,21 @@ export const AttendanceSection: React.FC = () => {
         {/* View Toggle & Week Navigator */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 self-start sm:self-auto">
           {/* Week switcher */}
-          <div className="flex items-center bg-sand-200 p-0.5 sm:p-1 rounded-xl border border-sand-300 text-xs font-semibold">
+          <div className="flex items-center bg-[#EBE2CC] p-0.5 sm:p-1 rounded-xl border border-[#CFC6B1] text-xs font-semibold">
             <button
               onClick={handlePrevWeek}
-              className="p-1 hover:bg-[#FAF6EE] rounded-lg text-sand-700 hover:text-sand-950 transition-colors"
+              className="p-1 hover:bg-[#CFC6B1] rounded-lg text-[#635B4E] hover:text-[#302C25] transition-colors"
               title="Previous Week"
             >
               <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
-            <span className="px-1.5 font-mono text-[10px] sm:text-[11px] text-sand-900 whitespace-nowrap">
+            <span className="px-1.5 font-mono text-[10px] sm:text-[11px] text-[#302C25] whitespace-nowrap">
               {weekDays[0].dayNumber} {weekDays[0].date.toLocaleDateString('en-IN', { month: 'short' })} –{' '}
               {weekDays[6].dayNumber} {weekDays[6].date.toLocaleDateString('en-IN', { month: 'short' })}
             </span>
             <button
               onClick={handleNextWeek}
-              className="p-1 hover:bg-[#FAF6EE] rounded-lg text-sand-700 hover:text-sand-950 transition-colors"
+              className="p-1 hover:bg-[#CFC6B1] rounded-lg text-[#635B4E] hover:text-[#302C25] transition-colors"
               title="Next Week"
             >
               <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -294,13 +294,13 @@ export const AttendanceSection: React.FC = () => {
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center bg-sand-200 p-0.5 sm:p-1 rounded-xl border border-sand-300 text-xs font-semibold">
+          <div className="flex items-center bg-[#EBE2CC] p-0.5 sm:p-1 rounded-xl border border-[#CFC6B1] text-xs font-semibold">
             <button
               onClick={() => setActiveTab('daily')}
               className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all text-[11px] sm:text-xs ${
                 activeTab === 'daily'
-                  ? 'bg-sand-900 text-[#FAF6EE] shadow-xs font-bold'
-                  : 'text-sand-700 hover:text-sand-950'
+                  ? 'bg-[#302C25] text-[#FAF6EE] shadow-xs font-bold'
+                  : 'text-[#635B4E] hover:text-[#302C25]'
               }`}
             >
               Daily
@@ -309,8 +309,8 @@ export const AttendanceSection: React.FC = () => {
               onClick={() => setActiveTab('weekly')}
               className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all text-[11px] sm:text-xs ${
                 activeTab === 'weekly'
-                  ? 'bg-sand-900 text-[#FAF6EE] shadow-xs font-bold'
-                  : 'text-sand-700 hover:text-sand-950'
+                  ? 'bg-[#302C25] text-[#FAF6EE] shadow-xs font-bold'
+                  : 'text-[#635B4E] hover:text-[#302C25]'
               }`}
             >
               Weekly Pay
@@ -323,10 +323,10 @@ export const AttendanceSection: React.FC = () => {
               setAlarmTargetEmpId(undefined);
               setIsAlarmModalOpen(true);
             }}
-            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-900 border border-amber-300/80 rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+            className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] rounded-xl text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
             title="Set Overtime Alarm or Daily Reminder"
           >
-            <Bell className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
+            <Bell className="w-3.5 h-3.5 text-amber-700 animate-bounce" />
             <span>OT Alarm</span>
           </button>
         </div>
@@ -345,10 +345,10 @@ export const AttendanceSection: React.FC = () => {
               }}
               className={`py-1.5 px-0.5 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center transition-all border relative ${
                 isSelected
-                  ? 'bg-sand-900 text-[#FAF6EE] border-sand-950 shadow-md ring-2 ring-sand-400/50'
+                  ? 'bg-[#302C25] text-[#FAF6EE] border-[#1B1915] shadow-md ring-2 ring-[#B7B09E]'
                   : d.isToday
-                  ? 'bg-sand-200 text-sand-950 border-sand-400'
-                  : 'bg-[#F5EFE3] hover:bg-sand-200 text-sand-800 border-sand-300'
+                  ? 'bg-[#EBE2CC] text-[#302C25] border-[#B7B09E] font-bold'
+                  : 'bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border-[#CFC6B1]'
               }`}
             >
               <span className="text-[9px] sm:text-[10px] font-semibold uppercase">{d.dayName}</span>
@@ -356,7 +356,7 @@ export const AttendanceSection: React.FC = () => {
               {d.hasRecords ? (
                 <div className="flex items-center gap-0.5 mt-0.5">
                   {d.presentCount > 0 && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-xs" title={`${d.presentCount} Present`} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shadow-xs" title={`${d.presentCount} Present`} />
                   )}
                   {d.halfDayCount > 0 && (
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shadow-xs" title={`${d.halfDayCount} Half-day`} />
@@ -415,11 +415,11 @@ export const AttendanceSection: React.FC = () => {
       {/* Mode 1: Daily Attendance Marking */}
       {activeTab === 'daily' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F5EFE3] p-3 rounded-2xl border border-sand-300 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#EBE2CC] p-3 rounded-2xl border border-[#CFC6B1] text-xs">
             <div>
-              <span className="font-bold text-sand-950">
+              <span className="font-bold text-[#302C25]">
                 Marking Attendance for:{' '}
-                <span className="text-sand-900 font-mono font-bold">
+                <span className="text-[#302C25] font-mono font-bold">
                   {new Date(selectedDateStr).toLocaleDateString('en-IN', {
                     weekday: 'long',
                     day: 'numeric',
@@ -428,7 +428,7 @@ export const AttendanceSection: React.FC = () => {
                   })}
                 </span>
               </span>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-[#635B4E]">
                 Select Present (1 shift), Half-Day (0.5), or Absent, and specify daily overtime hours.
               </p>
             </div>
@@ -439,10 +439,10 @@ export const AttendanceSection: React.FC = () => {
                 onClick={async () => {
                   await cleanDuplicateData();
                 }}
-                className="px-2.5 py-1.5 bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 font-semibold rounded-xl text-xs flex items-center gap-1 transition-colors"
+                className="px-2.5 py-1.5 bg-[#DED6C1] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] font-semibold rounded-xl text-xs flex items-center gap-1 transition-colors"
                 title="Remove duplicate attendance and dummy records"
               >
-                <Sparkles className="w-3.5 h-3.5 text-sand-800" />
+                <Sparkles className="w-3.5 h-3.5 text-[#302C25]" />
                 <span>Remove Duplicates</span>
               </button>
 
@@ -480,12 +480,12 @@ export const AttendanceSection: React.FC = () => {
               // Distinctive card color styling based on attendance status
               const cardBgStyle =
                 status === 'present'
-                  ? 'bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-[#FAF6EE] border-2 border-emerald-500 shadow-sm shadow-emerald-500/10'
+                  ? 'bg-gradient-to-r from-emerald-100/80 via-emerald-50/50 to-[#EBE2CC] border-2 border-emerald-600 shadow-sm'
                   : status === 'half-day'
-                  ? 'bg-gradient-to-r from-sky-100/70 via-sky-50/40 to-[#FAF6EE] border-2 border-sky-500 shadow-sm shadow-sky-500/10'
+                  ? 'bg-gradient-to-r from-amber-100/80 via-amber-50/50 to-[#EBE2CC] border-2 border-amber-600 shadow-sm'
                   : status === 'absent'
-                  ? 'bg-gradient-to-r from-rose-100/70 via-rose-50/40 to-[#FAF6EE] border-2 border-rose-400 shadow-sm shadow-rose-500/10'
-                  : 'bg-[#F5EFE3] border-2 border-dashed border-sand-400 hover:border-sand-500';
+                  ? 'bg-gradient-to-r from-rose-100/80 via-rose-50/50 to-[#EBE2CC] border-2 border-rose-500 shadow-sm'
+                  : 'bg-[#EBE2CC] border-2 border-dashed border-[#CFC6B1] hover:border-[#B7B09E]';
 
               const avatarBg =
                 status === 'present'
@@ -692,9 +692,9 @@ export const AttendanceSection: React.FC = () => {
                       </div>
                     )}
                     {status === 'unmarked' && (
-                      <div className="px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-xl text-right">
-                        <span className="text-[9px] text-slate-400 font-semibold block uppercase">Earned Today</span>
-                        <span className="font-bold text-slate-400 text-xs sm:text-sm">—</span>
+                      <div className="px-2.5 py-1 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-right">
+                        <span className="text-[9px] text-[#736B5C] font-semibold block uppercase">Earned Today</span>
+                        <span className="font-bold text-[#736B5C] text-xs sm:text-sm">—</span>
                       </div>
                     )}
                   </div>
@@ -708,18 +708,18 @@ export const AttendanceSection: React.FC = () => {
       {/* Mode 2: Weekly Payroll & Pay at End of Week */}
       {activeTab === 'weekly' && (
         <div className="space-y-4">
-          <div className="bg-gradient-to-r from-brand-50 to-indigo-50/60 p-4 rounded-2xl border border-brand-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="bg-[#EBE2CC] p-4 rounded-2xl border border-[#CFC6B1] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div>
-              <span className="font-extrabold text-sm text-brand-950">
+              <span className="font-extrabold text-sm text-[#302C25]">
                 Weekly Wage Disbursement ({weekStartDate} to {weekEndDate})
               </span>
-              <p className="text-brand-700 mt-0.5">
+              <p className="text-[#635B4E] mt-0.5">
                 Review accumulated shifts and overtime hours for the week and settle wages directly to workers via UPI.
               </p>
             </div>
-            <div className="font-bold text-xs text-sand-900 bg-[#FAF6EE] px-3 py-1.5 rounded-xl border border-sand-300 shadow-xs">
+            <div className="font-bold text-xs text-[#302C25] bg-[#DED6C1] px-3 py-1.5 rounded-xl border border-[#CFC6B1] shadow-2xs">
               Total Weekly Payable:{' '}
-              <span className="text-sand-950 text-sm font-black">
+              <span className="text-[#302C25] text-sm font-black">
                 {formatINR(weeklyWorkerSummary.reduce((sum, w) => sum + (w.isFullyPaid ? 0 : w.totalPayable), 0))}
               </span>
             </div>
@@ -763,16 +763,16 @@ export const AttendanceSection: React.FC = () => {
                   {/* Summary of Shifts & OT */}
                   <div className="grid grid-cols-3 gap-2 text-center text-xs bg-[#F5EFE3] p-2 sm:p-2.5 rounded-xl border border-sand-300">
                     <div>
-                      <span className="text-[10px] text-sand-500 uppercase font-semibold block">Shifts</span>
-                      <span className="font-bold text-sand-950">{item.totalShifts}</span>
+                      <span className="text-[10px] text-[#736B5C] uppercase font-semibold block">Shifts</span>
+                      <span className="font-bold text-[#302C25]">{item.totalShifts}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">Overtime</span>
-                      <span className="font-bold text-amber-600">{item.totalOvertimeHours}h</span>
+                      <span className="text-[10px] text-[#736B5C] uppercase font-semibold block">Overtime</span>
+                      <span className="font-bold text-amber-800">{item.totalOvertimeHours}h</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">Wages</span>
-                      <span className="font-black text-brand-700 text-xs sm:text-sm">{formatINR(item.totalPayable, true)}</span>
+                      <span className="text-[10px] text-[#736B5C] uppercase font-semibold block">Wages</span>
+                      <span className="font-black text-[#302C25] text-xs sm:text-sm">{formatINR(item.totalPayable, true)}</span>
                     </div>
                   </div>
 
@@ -781,20 +781,20 @@ export const AttendanceSection: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setLendModalEmpId(item.employee.id)}
-                      className="px-2.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold border border-amber-200/80 transition-colors flex items-center gap-1"
+                      className="px-2.5 py-2 bg-amber-100 hover:bg-amber-200/80 text-amber-900 rounded-xl text-xs font-bold border border-amber-300 transition-colors flex items-center gap-1"
                       title="Lend money or view loan ledger"
                     >
-                      <HandCoins className="w-3.5 h-3.5 text-amber-600" />
+                      <HandCoins className="w-3.5 h-3.5 text-amber-700" />
                       <span>Khata</span>
                     </button>
 
                     {item.isFullyPaid ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold text-xs border border-emerald-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-100 text-emerald-900 rounded-xl font-bold text-xs border border-emerald-300">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                         <span>Paid for Week</span>
                       </span>
                     ) : item.totalPayable <= 0 ? (
-                      <span className="px-3 py-2 text-slate-400 text-xs font-semibold">No shifts</span>
+                      <span className="px-3 py-2 text-[#736B5C] text-xs font-semibold">No shifts</span>
                     ) : (
                       <button
                         type="button"
@@ -812,9 +812,9 @@ export const AttendanceSection: React.FC = () => {
                             endDate: weekEndDate,
                           });
                         }}
-                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-1.5 sm:gap-2 transition-all"
+                        className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-[#302C25] hover:bg-[#1B1915] text-[#FAF6EE] rounded-xl text-xs font-bold shadow-md shadow-[#302C25]/20 flex items-center gap-1.5 sm:gap-2 transition-all border border-[#1B1915]"
                       >
-                        <Zap className="w-4 h-4" />
+                        <Zap className="w-4 h-4 text-[#EBE2CC]" />
                         <span>Pay {formatINR(item.totalPayable)} via UPI</span>
                       </button>
                     )}
@@ -861,34 +861,34 @@ export const AttendanceSection: React.FC = () => {
       {/* Weekly UPI Payment Modal Drawer */}
       {payingWorkerData && payingUpiDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sand-950/40 backdrop-blur-xs">
-          <div className="relative w-full max-w-md bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-5 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-sand-300/70">
+          <div className="relative w-full max-w-md bg-[#DED6C1] rounded-3xl shadow-2xl border border-[#CFC6B1] p-5 space-y-4 animate-in fade-in zoom-in-95 text-[#302C25]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#CFC6B1]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sand-200 text-sand-900 flex items-center justify-center font-bold border border-sand-300">
-                  <Zap className="w-4 h-4 fill-sand-800 text-sand-800" />
+                <div className="w-9 h-9 rounded-xl bg-[#EBE2CC] text-[#302C25] flex items-center justify-center font-bold border border-[#CFC6B1]">
+                  <Zap className="w-4 h-4 fill-[#302C25] text-[#302C25]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-sand-950">Weekly Wage UPI Payout</h3>
-                  <p className="text-[11px] text-sand-600">{payingWorkerData.employee.fullName}</p>
+                  <h3 className="text-sm font-bold text-[#302C25]">Weekly Wage UPI Payout</h3>
+                  <p className="text-[11px] text-[#635B4E]">{payingWorkerData.employee.fullName}</p>
                 </div>
               </div>
               <button
                 onClick={() => setPayingWorkerData(null)}
-                className="text-sand-500 hover:text-sand-900 p-1 text-sm font-bold"
+                className="text-[#635B4E] hover:text-[#302C25] p-1 text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
             {/* Breakdown Card */}
-            <div className="bg-[#F5EFE3] p-3.5 rounded-2xl border border-sand-300 text-xs space-y-2">
-              <div className="flex justify-between text-sand-700">
+            <div className="bg-[#EBE2CC] p-3.5 rounded-2xl border border-[#CFC6B1] text-xs space-y-2">
+              <div className="flex justify-between text-[#635B4E]">
                 <span>Shifts Worked:</span>
-                <span className="font-bold text-sand-950">
+                <span className="font-bold text-[#302C25]">
                   {payingWorkerData.shiftsCount} shifts × {formatINR(payingWorkerData.employee.shiftRate || 800)} = {formatINR(payingWorkerData.shiftPay)}
                 </span>
               </div>
-              <div className="flex justify-between text-sand-700">
+              <div className="flex justify-between text-[#635B4E]">
                 <span>Overtime Worked:</span>
                 <span className="font-bold text-amber-800">
                   +{payingWorkerData.overtimeHours}h OT = {formatINR(payingWorkerData.overtimePay)}
@@ -897,7 +897,7 @@ export const AttendanceSection: React.FC = () => {
 
               {/* Advance Loan Deduction Option if worker has an outstanding loan */}
               {workerAdvanceBal > 0 && (
-                <div className="p-2.5 bg-amber-100/40 border border-amber-300 rounded-xl space-y-1.5 my-1">
+                <div className="p-2.5 bg-[#DED6C1] border border-[#B7B09E] rounded-xl space-y-1.5 my-1">
                   <div className="flex items-center justify-between">
                     <label className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -914,14 +914,14 @@ export const AttendanceSection: React.FC = () => {
                       />
                       <span>Reduce from Loan / Advance</span>
                     </label>
-                    <span className="text-[10px] font-bold text-amber-900 bg-[#FAF6EE] px-2 py-0.5 rounded-md border border-amber-300">
+                    <span className="text-[10px] font-bold text-amber-900 bg-[#EBE2CC] px-2 py-0.5 rounded-md border border-[#CFC6B1]">
                       Bal: {formatINR(workerAdvanceBal)}
                     </span>
                   </div>
 
                   {weeklyDeductAdvance && (
                     <div className="flex items-center gap-1.5 pt-1 animate-in fade-in">
-                      <span className="text-xs font-bold text-sand-600">₹</span>
+                      <span className="text-xs font-bold text-[#635B4E]">₹</span>
                       <input
                         type="number"
                         step="any"
@@ -930,12 +930,12 @@ export const AttendanceSection: React.FC = () => {
                         value={weeklyDeductionAmount}
                         onChange={(e) => setWeeklyDeductionAmount(e.target.value)}
                         placeholder="Amount to deduct"
-                        className="w-full py-1 px-2 text-xs font-bold bg-[#FAF6EE] border border-amber-300 rounded-lg text-sand-950"
+                        className="w-full py-1 px-2 text-xs font-bold bg-[#EBE2CC] border border-[#B7B09E] rounded-lg text-[#302C25]"
                       />
                       <button
                         type="button"
                         onClick={() => setWeeklyDeductionAmount(Math.min(workerAdvanceBal, grossWeeklyPay))}
-                        className="px-2 py-1 text-[10px] font-bold bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg shrink-0 transition-colors border border-amber-300"
+                        className="px-2 py-1 text-[10px] font-bold bg-[#DED6C1] hover:bg-[#CFC6B1] text-[#302C25] rounded-lg shrink-0 transition-colors border border-[#CFC6B1]"
                       >
                         Full
                       </button>
@@ -951,37 +951,37 @@ export const AttendanceSection: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex justify-between pt-2 border-t border-sand-300 text-sm">
-                <span className="font-bold text-sand-950">Total Net Weekly Payable:</span>
-                <span className="font-black text-sand-950 text-base">{formatINR(netWeeklyPayable, true)}</span>
+              <div className="flex justify-between pt-2 border-t border-[#CFC6B1] text-sm">
+                <span className="font-bold text-[#302C25]">Total Net Weekly Payable:</span>
+                <span className="font-black text-[#302C25] text-base">{formatINR(netWeeklyPayable, true)}</span>
               </div>
-              <div className="flex justify-between text-[11px] text-sand-600 pt-1">
+              <div className="flex justify-between text-[11px] text-[#635B4E] pt-1">
                 <span>Payee UPI VPA:</span>
-                <span className="font-mono font-bold text-sand-900">{payingUpiDetails.payeeAddress}</span>
+                <span className="font-mono font-bold text-[#302C25]">{payingUpiDetails.payeeAddress}</span>
               </div>
             </div>
 
             {/* Direct App Launchers */}
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-sand-700 uppercase">Pay via Installed App:</p>
+              <p className="text-[11px] font-bold text-[#635B4E] uppercase">Pay via Installed App:</p>
               <div className="grid grid-cols-3 gap-2">
                 <a
                   href={payingUpiDetails.links.gpay}
-                  className="py-2.5 px-2 bg-[#F5EFE3] hover:bg-sand-200 border border-sand-300 hover:border-sand-400 rounded-xl text-center text-xs font-bold text-sand-900 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
+                  className="py-2.5 px-2 bg-[#EBE2CC] hover:bg-[#CFC6B1] border border-[#CFC6B1] hover:border-[#B7B09E] rounded-xl text-center text-xs font-bold text-[#302C25] flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
                 >
                   <GooglePayLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                   <span className="truncate w-full font-semibold">Google Pay</span>
                 </a>
                 <a
                   href={payingUpiDetails.links.phonepe}
-                  className="py-2.5 px-2 bg-[#F5EFE3] hover:bg-sand-200 border border-sand-300 hover:border-sand-400 rounded-xl text-center text-xs font-bold text-sand-900 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
+                  className="py-2.5 px-2 bg-[#EBE2CC] hover:bg-[#CFC6B1] border border-[#CFC6B1] hover:border-[#B7B09E] rounded-xl text-center text-xs font-bold text-[#302C25] flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
                 >
                   <PhonePeLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                   <span className="truncate w-full font-semibold">PhonePe</span>
                 </a>
                 <a
                   href={payingUpiDetails.links.paytm}
-                  className="py-2.5 px-2 bg-[#F5EFE3] hover:bg-sand-200 border border-sand-300 hover:border-sand-400 rounded-xl text-center text-xs font-bold text-sand-900 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
+                  className="py-2.5 px-2 bg-[#EBE2CC] hover:bg-[#CFC6B1] border border-[#CFC6B1] hover:border-[#B7B09E] rounded-xl text-center text-xs font-bold text-[#302C25] flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
                 >
                   <PaytmLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                   <span className="truncate w-full font-semibold">Paytm</span>
@@ -994,7 +994,7 @@ export const AttendanceSection: React.FC = () => {
                   onClick={() => {
                     if (payingUpiDetails?.uri) window.location.href = payingUpiDetails.uri;
                   }}
-                  className="flex-1 py-2.5 px-3 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-sand-900/20 border border-sand-950 transition-all"
+                  className="flex-1 py-2.5 px-3 bg-[#302C25] hover:bg-[#1B1915] text-[#FAF6EE] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-[#302C25]/20 border border-[#1B1915] transition-all"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Open Any UPI App</span>

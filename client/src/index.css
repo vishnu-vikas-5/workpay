@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 43 42% 86%; /* #EBE2CC */
+    --foreground: 36 13% 17%; /* #302C25 */
   }
 
   * {
@@ -21,10 +21,11 @@
     -webkit-overflow-scrolling: touch;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    background-color: #EBE2CC;
   }
 
   body {
-    @apply bg-[#F4ECE1] text-sand-950 antialiased;
+    @apply bg-[#EBE2CC] text-[#302C25] antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     width: 100%;
     min-height: 100%;
@@ -61,14 +62,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #EBE2CC;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #CFC6B1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #B7B09E;
 }
 
 @keyframes pulse-subtle {

@@ -115,7 +115,7 @@ export const RingingAlarmModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-sand-950/60 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-md bg-[#FAF6EE] rounded-3xl shadow-2xl border-2 border-amber-600 p-5 sm:p-6 text-center space-y-4 animate-in zoom-in-95">
+      <div className="relative w-full max-w-md bg-[#DED6C1] rounded-3xl shadow-2xl border-2 border-amber-600 p-5 sm:p-6 text-center space-y-4 animate-in zoom-in-95 text-[#302C25]">
         {/* Animated Pulsing Alarm Bell */}
         <div className="relative mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shadow-lg shadow-amber-600/20">
           <div className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-40"></div>
@@ -189,7 +189,7 @@ export const RingingAlarmModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSnooze}
-                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                className="py-2 px-3 bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
               >
                 <Clock className="w-3.5 h-3.5" />
                 <span>Snooze (10 mins)</span>

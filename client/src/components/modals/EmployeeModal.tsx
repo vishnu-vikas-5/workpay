@@ -131,25 +131,25 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto"
+        className="relative w-full max-w-lg bg-[#DED6C1] rounded-3xl shadow-2xl border border-[#CFC6B1] p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto text-[#302C25]"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-sand-200 hover:bg-sand-300 text-sand-800 border border-sand-300 transition-colors z-10"
+          className="absolute top-4 right-4 p-2 rounded-full bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] transition-colors z-10"
           aria-label="Close modal"
         >
           <X className="w-4 h-4" />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-sand-200 text-sand-900 border border-sand-300 flex items-center justify-center">
-            <UserPlus className="w-5 h-5 text-sand-800" />
+          <div className="w-10 h-10 rounded-xl bg-[#EBE2CC] text-[#302C25] border border-[#CFC6B1] flex items-center justify-center">
+            <UserPlus className="w-5 h-5 text-[#302C25]" />
           </div>
           <div>
-            <h3 className="text-base font-black text-sand-950">
+            <h3 className="text-base font-black text-[#302C25]">
               {employeeToEdit ? 'Edit Employee Details' : 'Add Employee & Shift Rate'}
             </h3>
-            <p className="text-xs text-sand-600">
+            <p className="text-xs text-[#635B4E]">
               Set name, phone, UPI ID, and 8-hour shift rate with automatic hourly overtime
             </p>
           </div>
@@ -165,7 +165,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Employee Name */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-[#302C25] mb-1">
               Employee Full Name <span className="text-rose-500">*</span>
             </label>
             <input
@@ -173,7 +173,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
               placeholder="e.g. Rajesh Kumar"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950 focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
+              className="w-full px-3.5 py-2.5 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-semibold text-[#302C25] focus:ring-2 focus:ring-[#B7B09E] focus:border-[#B7B09E]"
               required
             />
           </div>
@@ -181,7 +181,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           {/* Phone Number & UPI ID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-sand-900 mb-1">
+              <label className="block text-xs font-bold text-[#302C25] mb-1">
                 Phone Number <span className="text-rose-500">*</span>
               </label>
               <input
@@ -189,42 +189,42 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 placeholder="e.g. 9876543210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950 focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
+                className="w-full px-3.5 py-2.5 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-semibold text-[#302C25] focus:ring-2 focus:ring-[#B7B09E] focus:border-[#B7B09E]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-sand-900 mb-1">
+              <label className="block text-xs font-bold text-[#302C25] mb-1">
                 UPI ID (Optional, for instant UPI payments)
               </label>
               <div className="relative">
-                <Smartphone className="w-4 h-4 text-sand-700 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Smartphone className="w-4 h-4 text-[#736B5C] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="e.g. 9876543210@paytm"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-mono font-semibold text-sand-950 focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-mono font-semibold text-[#302C25] focus:ring-2 focus:ring-[#B7B09E] focus:border-[#B7B09E]"
                 />
               </div>
             </div>
           </div>
 
           {/* Shift Rate (8 Hours) and Overtime Calculation Banner */}
-          <div className="bg-[#F5EFE3] p-4 rounded-2xl border border-sand-300 space-y-3">
+          <div className="bg-[#EBE2CC] p-4 rounded-2xl border border-[#CFC6B1] space-y-3">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-sand-950 uppercase tracking-wider flex items-center gap-1.5">
-                <Banknote className="w-4 h-4 text-sand-800" />
+              <label className="block text-xs font-bold text-[#302C25] uppercase tracking-wider flex items-center gap-1.5">
+                <Banknote className="w-4 h-4 text-[#302C25]" />
                 <span>8-Hour Shift Rate (₹ INR)</span>
               </label>
-              <span className="text-[11px] font-bold text-sand-900 bg-sand-200 px-2 py-0.5 rounded-md border border-sand-300">
+              <span className="text-[11px] font-bold text-[#302C25] bg-[#DED6C1] px-2 py-0.5 rounded-md border border-[#CFC6B1]">
                 Standard Shift: 8 hrs
               </span>
             </div>
 
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sand-600 text-sm">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-[#736B5C] text-sm">
                 ₹
               </span>
               <input
@@ -240,17 +240,17 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                     setShiftRate(Math.round(num * 100) / 100);
                   }
                 }}
-                className="w-full pl-8 pr-4 py-2.5 bg-[#FAF6EE] border border-sand-300 rounded-xl text-sm font-black text-sand-950 focus:ring-2 focus:ring-sand-400 focus:border-sand-500 shadow-2xs"
+                className="w-full pl-8 pr-4 py-2.5 bg-[#DED6C1] border border-[#CFC6B1] rounded-xl text-sm font-black text-[#302C25] focus:ring-2 focus:ring-[#B7B09E] focus:border-[#B7B09E] shadow-2xs"
                 required
               />
             </div>
 
             {/* Live Calculation Display */}
-            <div className="bg-[#FAF6EE] p-3 rounded-xl border border-sand-300 flex items-center justify-between text-xs">
-              <span className="text-sand-700">
-                Overtime Rate <span className="text-sand-500">(Shift Rate ÷ 8):</span>
+            <div className="bg-[#DED6C1] p-3 rounded-xl border border-[#CFC6B1] flex items-center justify-between text-xs">
+              <span className="text-[#635B4E]">
+                Overtime Rate <span className="text-[#736B5C]">(Shift Rate ÷ 8):</span>
               </span>
-              <span className="font-black text-emerald-800 bg-emerald-100/70 px-2.5 py-1 rounded-lg border border-emerald-300">
+              <span className="font-black text-emerald-900 bg-[#EBE2CC] px-2.5 py-1 rounded-lg border border-[#CFC6B1]">
                 {formatINR(overtimeHourlyRate)} / hour
               </span>
             </div>
@@ -259,13 +259,13 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           {/* Optional Role & Department */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="block text-[11px] font-bold text-sand-700 mb-1">
+              <label className="block text-[11px] font-bold text-[#635B4E] mb-1">
                 Department
               </label>
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950"
+                className="w-full px-3 py-2 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-semibold text-[#302C25]"
               >
                 {departments.map((d) => (
                   <option key={d.id} value={d.name}>
@@ -276,33 +276,33 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-sand-700 mb-1">
+              <label className="block text-[11px] font-bold text-[#635B4E] mb-1">
                 Designation / Note
               </label>
               <input
                 type="text"
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
-                className="w-full px-3 py-2 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950"
+                className="w-full px-3 py-2 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-semibold text-[#302C25]"
                 placeholder="e.g. Worker"
               />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-sand-300/70">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#CFC6B1]">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-sand-700 hover:bg-sand-200 transition-colors"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-[#635B4E] hover:bg-[#CFC6B1] transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] border border-sand-950 shadow-md shadow-sand-900/20 transition-all flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#302C25] hover:bg-[#1B1915] text-[#FAF6EE] border border-[#1B1915] shadow-md shadow-[#302C25]/20 transition-all flex items-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#EBE2CC]" />
               <span>{submitting ? 'Saving...' : employeeToEdit ? 'Update Employee' : 'Add Employee'}</span>

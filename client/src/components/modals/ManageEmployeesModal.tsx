@@ -95,13 +95,13 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl bg-[#DED6C1] rounded-3xl shadow-2xl border border-[#CFC6B1] p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col text-[#302C25]"
       >
         {/* Dedicated Prominent Top-Right Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-sand-200 hover:bg-sand-300 text-sand-800 border border-sand-300 transition-colors z-20 shadow-xs"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] transition-colors z-20 shadow-xs"
           aria-label="Close modal"
           title="Close modal"
         >
@@ -109,14 +109,14 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
         </button>
 
         {/* Header */}
-        <div className="pb-3 border-b border-sand-300/70 pr-10 sm:pr-12">
+        <div className="pb-3 border-b border-[#CFC6B1] pr-10 sm:pr-12">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sand-200 text-sand-900 border border-sand-300 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-sand-800" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EBE2CC] text-[#302C25] border border-[#CFC6B1] flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-[#302C25]" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-base font-black text-sand-950 leading-tight">Manage Employees</h3>
-              <p className="text-[11px] sm:text-xs text-sand-600 truncate">
+              <h3 className="text-base font-black text-[#302C25] leading-tight">Manage Employees</h3>
+              <p className="text-[11px] sm:text-xs text-[#635B4E] truncate">
                 Edit employee details, rates, or remove workers
               </p>
             </div>
@@ -130,7 +130,7 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
                 onClose();
                 onAddNew();
               }}
-              className="px-3 py-1.5 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] border border-sand-950 rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
+              className="px-3 py-1.5 bg-[#302C25] hover:bg-[#1B1915] text-[#FAF6EE] border border-[#1B1915] rounded-xl text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5 text-[#EBE2CC]" />
               <span>+ Add Worker</span>
@@ -140,10 +140,10 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
               type="button"
               onClick={handleCleanDuplicates}
               disabled={cleaning}
-              className="px-2.5 py-1.5 bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1.5 bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors"
               title="Clean duplicate and sample data"
             >
-              <Sparkles className="w-3.5 h-3.5 text-sand-800" />
+              <Sparkles className="w-3.5 h-3.5 text-[#302C25]" />
               <span>{cleaning ? 'Cleaning...' : 'Clean Duplicates'}</span>
             </button>
           </div>
@@ -151,20 +151,20 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
 
         {/* Search */}
         <div className="my-4 relative">
-          <Search className="w-4 h-4 text-sand-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#736B5C] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search workers by name, phone, or UPI..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950 placeholder-sand-500 focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
+            className="w-full pl-10 pr-4 py-2 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-semibold text-[#302C25] placeholder-[#736B5C] focus:ring-2 focus:ring-[#B7B09E] focus:border-[#B7B09E]"
           />
         </div>
 
         {/* Worker List */}
-        <div className="overflow-y-auto flex-1 divide-y divide-sand-200/80 pr-1">
+        <div className="overflow-y-auto flex-1 divide-y divide-[#CFC6B1]/70 pr-1">
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-sand-500 text-xs">
+            <div className="text-center py-8 text-[#736B5C] text-xs">
               No employees found matching &quot;{search}&quot;.
             </div>
           ) : (
@@ -175,19 +175,19 @@ export const ManageEmployeesModal: React.FC<ManageEmployeesModalProps> = ({
               return (
                 <div
                   key={emp.id}
-                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#F5EFE3] p-2 rounded-xl transition-colors"
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#EBE2CC] p-2 rounded-xl transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-sand-900 text-[#FAF6EE] font-bold flex items-center justify-center text-xs shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#302C25] text-[#FAF6EE] font-bold flex items-center justify-center text-xs shrink-0">
                       {emp.fullName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-bold text-sand-950 text-xs flex items-center gap-2">
+                      <p className="font-bold text-[#302C25] text-xs flex items-center gap-2">
                         <span>{emp.fullName}</span>
-                        <span className="text-[10px] font-mono text-sand-500 font-normal">{emp.phone}</span>
+                        <span className="text-[10px] font-mono text-[#736B5C] font-normal">{emp.phone}</span>
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 text-[11px]">
-                        <span className="font-mono text-sand-900 bg-[#FAF6EE] px-1.5 py-0.2 rounded font-semibold border border-sand-300">
+                        <span className="font-mono text-[#302C25] bg-[#EBE2CC] px-1.5 py-0.2 rounded font-semibold border border-[#CFC6B1]">
                           {emp.upiId}
                         </span>
                         <span className="text-sand-400">•</span>

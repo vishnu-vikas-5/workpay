@@ -85,21 +85,21 @@ export const PaymentHistorySection: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#FAF6EE] backdrop-blur-md rounded-3xl border border-sand-300 shadow-[0_12px_32px_rgba(183,176,158,0.25)] p-3.5 sm:p-6 space-y-4 sm:space-y-5">
+    <div className="bg-[#DED6C1] rounded-3xl border border-[#CFC6B1] shadow-[0_12px_32px_rgba(183,176,158,0.3)] p-3.5 sm:p-6 space-y-4 sm:space-y-5 text-[#302C25]">
       {/* Header and stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-sand-300/70">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#CFC6B1]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-sand-200 text-sand-900 flex items-center justify-center font-bold border border-sand-300">
-            <History className="w-5 h-5 text-sand-800" />
+          <div className="w-10 h-10 rounded-2xl bg-[#EBE2CC] text-[#302C25] flex items-center justify-center font-bold border border-[#CFC6B1]">
+            <History className="w-5 h-5 text-[#302C25]" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-sand-950 tracking-tight flex items-center gap-2">
+            <h3 className="text-lg font-black text-[#302C25] tracking-tight flex items-center gap-2">
               <span>Payment History & Transaction Records</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100/70 text-emerald-900 border border-emerald-300/80">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-300">
                 {transactions.length} records
               </span>
             </h3>
-            <p className="text-xs text-sand-600">
+            <p className="text-xs text-[#635B4E]">
               Complete audit record of shift and overtime disbursements paid via UPI
             </p>
           </div>
@@ -110,7 +110,7 @@ export const PaymentHistorySection: React.FC = () => {
           {filtered.length > 0 && (
             <button
               onClick={handleExportCSV}
-              className="px-3.5 py-2 bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-2 bg-[#EBE2CC] hover:bg-[#CFC6B1] text-[#302C25] border border-[#CFC6B1] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
@@ -121,40 +121,40 @@ export const PaymentHistorySection: React.FC = () => {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 bg-[#F5EFE3] rounded-2xl border border-sand-300">
-          <span className="text-[11px] font-bold text-sand-600 uppercase tracking-wider">Total Paid Out</span>
-          <p className="text-xl font-black text-emerald-700 mt-0.5">{formatINR(stats.totalAmount)}</p>
-          <span className="text-[10px] text-sand-500">All settled disbursements</span>
+        <div className="p-3.5 bg-[#EBE2CC] rounded-2xl border border-[#CFC6B1]">
+          <span className="text-[11px] font-bold text-[#635B4E] uppercase tracking-wider">Total Paid Out</span>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">{formatINR(stats.totalAmount)}</p>
+          <span className="text-[10px] text-[#736B5C]">All settled disbursements</span>
         </div>
 
-        <div className="p-3.5 bg-[#F5EFE3] rounded-2xl border border-sand-300">
-          <span className="text-[11px] font-bold text-sand-600 uppercase tracking-wider">Total Payments</span>
-          <p className="text-xl font-black text-sand-950 mt-0.5">{stats.totalCount}</p>
-          <span className="text-[10px] text-sand-500">Recorded payouts</span>
+        <div className="p-3.5 bg-[#EBE2CC] rounded-2xl border border-[#CFC6B1]">
+          <span className="text-[11px] font-bold text-[#635B4E] uppercase tracking-wider">Total Payments</span>
+          <p className="text-xl font-black text-[#302C25] mt-0.5">{stats.totalCount}</p>
+          <span className="text-[10px] text-[#736B5C]">Recorded payouts</span>
         </div>
 
-        <div className="p-3.5 bg-[#F5EFE3] rounded-2xl border border-sand-300">
-          <span className="text-[11px] font-bold text-sand-600 uppercase tracking-wider">Total Shifts Paid</span>
-          <p className="text-xl font-black text-sand-900 mt-0.5">{stats.totalShifts}</p>
-          <span className="text-[10px] text-sand-500">8-hour shifts</span>
+        <div className="p-3.5 bg-[#EBE2CC] rounded-2xl border border-[#CFC6B1]">
+          <span className="text-[11px] font-bold text-[#635B4E] uppercase tracking-wider">Total Shifts Paid</span>
+          <p className="text-xl font-black text-[#302C25] mt-0.5">{stats.totalShifts}</p>
+          <span className="text-[10px] text-[#736B5C]">8-hour shifts</span>
         </div>
 
-        <div className="p-3.5 bg-[#F5EFE3] rounded-2xl border border-sand-300">
-          <span className="text-[11px] font-bold text-sand-600 uppercase tracking-wider">Overtime Paid</span>
-          <p className="text-xl font-black text-amber-700 mt-0.5">{stats.totalOT} hrs</p>
-          <span className="text-[10px] text-sand-500">Rate ÷ 8 per hour</span>
+        <div className="p-3.5 bg-[#EBE2CC] rounded-2xl border border-[#CFC6B1]">
+          <span className="text-[11px] font-bold text-[#635B4E] uppercase tracking-wider">Overtime Paid</span>
+          <p className="text-xl font-black text-amber-800 mt-0.5">{stats.totalOT} hrs</p>
+          <span className="text-[10px] text-[#736B5C]">Rate ÷ 8 per hour</span>
         </div>
       </div>
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="w-4 h-4 text-sand-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-[#736B5C] absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           placeholder="Search by worker name, phone, UPI ID, or UTR..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950 placeholder-sand-500 focus:outline-none focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
+          className="w-full pl-10 pr-4 py-2.5 bg-[#EBE2CC] border border-[#CFC6B1] rounded-xl text-xs font-semibold text-[#302C25] placeholder-[#736B5C] focus:outline-none focus:ring-2 focus:ring-[#B7B09E] focus:border-[#B7B09E]"
         />
       </div>
 
@@ -174,28 +174,28 @@ export const PaymentHistorySection: React.FC = () => {
             {filtered.map((tx) => (
               <div
                 key={tx.id}
-                className="p-3.5 bg-[#F5EFE3] rounded-2xl border border-sand-300 space-y-2.5"
+                className="p-3.5 bg-[#EBE2CC] rounded-2xl border border-[#CFC6B1] space-y-2.5"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-sand-900 text-[#FAF6EE] font-bold flex items-center justify-center text-xs">
+                    <div className="w-8 h-8 rounded-xl bg-[#302C25] text-[#FAF6EE] font-bold flex items-center justify-center text-xs">
                       {tx.employeeName?.slice(0, 2).toUpperCase() || 'WP'}
                     </div>
                     <div>
-                      <p className="font-bold text-sand-950 text-xs">{tx.employeeName}</p>
-                      <p className="text-[10px] text-sand-600">{formatDateTime(tx.initiatedAt)}</p>
+                      <p className="font-bold text-[#302C25] text-xs">{tx.employeeName}</p>
+                      <p className="text-[10px] text-[#635B4E]">{formatDateTime(tx.initiatedAt)}</p>
                     </div>
                   </div>
-                  <span className="font-black text-sand-950 text-sm">
+                  <span className="font-black text-[#302C25] text-sm">
                     {formatINR(tx.amount, true)}
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-sand-300 text-[11px]">
-                  <span className="font-mono text-sand-900 font-semibold bg-[#FAF6EE] px-2 py-0.5 rounded border border-sand-300">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-[#CFC6B1] text-[11px]">
+                  <span className="font-mono text-[#302C25] font-semibold bg-[#DED6C1] px-2 py-0.5 rounded border border-[#CFC6B1]">
                     {tx.destination?.upiId}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/70 text-emerald-950 border border-emerald-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-950 border border-emerald-300">
                     <CheckCircle2 className="w-3 h-3 text-emerald-700" />
                     <span>Paid via UPI</span>
                   </span>
@@ -252,7 +252,7 @@ export const PaymentHistorySection: React.FC = () => {
                       : '1 Shift + Overtime');
 
                   return (
-                    <tr key={tx.id} className="hover:bg-[#F5EFE3] transition-colors">
+                    <tr key={tx.id} className="hover:bg-[#EBE2CC] transition-colors">
                       <td className="py-3.5 px-3.5 whitespace-nowrap text-sand-700 font-medium">
                         {formatDateTime(tx.initiatedAt)}
                       </td>
