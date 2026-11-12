@@ -37,6 +37,17 @@ export const App: React.FC = () => {
   const [isOvertimeAlarmOpen, setIsOvertimeAlarmOpen] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
+  // Pure calculation for mobile navigation active tab index (no hook)
+  const mobileNavActiveIndex = isOvertimeAlarmOpen
+    ? 3
+    : isManageWorkersOpen
+    ? 4
+    : activeTab === 'attendance'
+    ? 1
+    : activeTab === 'history'
+    ? 2
+    : 0;
+
   const handleManualSync = async () => {
     try {
       const res = await syncWithCloud();
@@ -127,14 +138,6 @@ export const App: React.FC = () => {
     },
     { label: 'Workers', icon: <Users className="w-4 h-4" /> },
   ];
-
-  const mobileNavActiveIndex = useMemo(() => {
-    if (isOvertimeAlarmOpen) return 3;
-    if (isManageWorkersOpen) return 4;
-    if (activeTab === 'attendance') return 1;
-    if (activeTab === 'history') return 2;
-    return 0; // quickpay
-  }, [isOvertimeAlarmOpen, isManageWorkersOpen, activeTab]);
 
   const handleMobileNavChange = (index: number) => {
     if (index === 0) {
