@@ -18,7 +18,7 @@ export interface GooeyNavProps {
   color?: string;
   activeTextColor?: string;
   colors?: string[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'mobile';
   frame?: boolean;
   animationTime?: number;
   particleCount?: number;
@@ -41,21 +41,26 @@ const THEMES: Record<string, Record<string, string>> = {
     '--gn-muted': 'rgba(244, 244, 245, 0.62)'
   },
   light: {
-    '--gn-frame': 'rgba(235, 226, 204, 0.55)', // Warm linen #EBE2CC frosted glass
-    '--gn-frame-edge': 'rgba(207, 198, 177, 0.45)', // #CFC6B1
+    '--gn-frame': 'rgba(245, 240, 230, 0.92)', // Warm linen #EBE2CC frosted glass
+    '--gn-frame-edge': 'rgba(207, 198, 177, 0.65)', // #CFC6B1
     '--gn-frame-highlight': 'rgba(255, 255, 255, 0.95)',
-    '--gn-frame-shadow': '0 20px 40px -20px rgba(183, 176, 158, 0.4), 0 6px 16px -8px rgba(183, 176, 158, 0.25)',
-    '--gn-ink': '#282420',
-    '--gn-muted': 'rgba(75, 70, 64, 0.72)'
+    '--gn-frame-shadow': '0 20px 45px -15px rgba(48, 44, 37, 0.25), 0 6px 16px -6px rgba(48, 44, 37, 0.15)',
+    '--gn-ink': '#302C25',
+    '--gn-muted': 'rgba(79, 74, 62, 0.78)'
   }
 };
 
 const PILLS: Record<string, { color: string; hover: string; shadow: number }> = {
   dark: { color: '#f4f4f5', hover: 'rgba(255, 255, 255, 0.08)', shadow: 0.4 },
-  light: { color: '#312E29', hover: 'rgba(207, 198, 177, 0.25)', shadow: 0.25 }
+  light: { color: '#302C25', hover: 'rgba(207, 198, 177, 0.35)', shadow: 0.25 }
 };
 
-const SIZES: Record<string, string> = { sm: 'gooey-nav--sm', md: 'gooey-nav--md', lg: 'gooey-nav--lg' };
+const SIZES: Record<string, string> = {
+  sm: 'gooey-nav--sm',
+  md: 'gooey-nav--md',
+  lg: 'gooey-nav--lg',
+  mobile: 'gooey-nav--mobile'
+};
 
 const DEFAULT_ITEMS: GooeyNavItem[] = [
   { label: 'Home', href: '#' },
@@ -282,9 +287,9 @@ export const GooeyNav: React.FC<GooeyNavProps> = ({
   settingsRef.current = settings;
 
   const select = (index: number) => {
+    onChange?.(index, items[index]);
     if (index === current) return;
     if (activeIndex === undefined) setInnerIndex(index);
-    onChange?.(index, items[index]);
   };
 
   useIsomorphicLayoutEffect(() => {

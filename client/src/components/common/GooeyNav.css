@@ -27,6 +27,71 @@
   --gn-y: 11px;
 }
 
+.gooey-nav--mobile {
+  --gn-pad: 4px;
+  --gn-gap: 2px;
+  --gn-font: 10px;
+  --gn-x: 4px;
+  --gn-y: 4px;
+  width: 100%;
+  display: flex;
+}
+
+.gooey-nav--mobile .gooey-nav__stage {
+  width: 100%;
+}
+
+.gooey-nav--mobile .gooey-nav__list {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.gooey-nav--mobile .gooey-nav__item {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.gooey-nav--mobile .gooey-nav__link {
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 2px;
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  align-items: center;
+  border-radius: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.gooey-nav--mobile .gooey-nav__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gooey-nav--mobile .gooey-nav__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.gooey-nav--mobile .gooey-nav__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 .gooey-nav--framed {
   padding: var(--gn-pad);
   border-radius: 999px;
@@ -56,6 +121,7 @@
   border-radius: 999px;
   background: var(--gn-pill);
   pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.35s ease, height 0.35s ease;
 }
 
 .gooey-nav__list {
@@ -120,6 +186,7 @@
 .gooey-nav__icon svg {
   width: 1.15em;
   height: 1.15em;
+  stroke: currentColor;
 }
 
 .gooey-nav__rim {

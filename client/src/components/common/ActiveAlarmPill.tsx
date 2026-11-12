@@ -37,7 +37,7 @@ export const ActiveAlarmPill: React.FC<ActiveAlarmPillProps> = ({ onOpenModal })
     <button
       type="button"
       onClick={onOpenModal}
-      className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3.5 py-2 rounded-2xl shadow-xl shadow-amber-500/30 flex items-center gap-2.5 text-xs font-bold transition-all transform hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-2 border border-white/20"
+      className="fixed bottom-24 right-4 sm:bottom-8 sm:right-8 z-50 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3.5 py-2 rounded-2xl shadow-xl shadow-amber-500/30 flex items-center gap-2.5 text-xs font-bold transition-all transform hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-2 border border-white/20"
       title="View Active Alarms"
     >
       <div className="relative">

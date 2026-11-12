@@ -71,20 +71,24 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#FAF7F2] text-sand-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Warm Ambient Gradients */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sand-200/60 via-transparent to-transparent -z-10" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_80%_80%,_var(--tw-gradient-stops))] from-sand-300/40 via-transparent to-transparent -z-10" />
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         {/* Brand */}
-        <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white mx-auto shadow-lg shadow-brand-500/20 mb-3">
+        <div className="w-14 h-14 rounded-3xl bg-sand-900 flex items-center justify-center text-[#EBE2CC] mx-auto shadow-lg shadow-sand-900/20 mb-3 border border-sand-950">
           <CreditCard className="w-7 h-7" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">WorkPay</h2>
-        <p className="text-xs font-semibold text-brand-600 mt-0.5">
+        <h2 className="text-2xl font-bold text-sand-950 tracking-tight">WorkPay</h2>
+        <p className="text-xs font-semibold text-sand-700 mt-0.5">
           Manage Shifts. Track Attendance. Pay Smarter.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl border border-slate-200/80 sm:rounded-3xl sm:px-10 space-y-4">
+        <div className="bg-[#FAF6EE] py-8 px-4 shadow-xl border border-sand-300 sm:rounded-3xl sm:px-10 space-y-4">
           {errorMessage && (
             <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
@@ -103,7 +107,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             type="button"
             onClick={handleGoogleAuth}
             disabled={loading}
-            className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-xs hover:border-slate-400 flex items-center justify-center gap-2.5 transition-all"
+            className="w-full py-2.5 px-4 bg-[#F5EFE3] hover:bg-sand-200 text-sand-900 font-bold text-xs rounded-xl border border-sand-300 shadow-xs hover:border-sand-400 flex items-center justify-center gap-2.5 transition-all"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
@@ -129,17 +133,17 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           {/* Divider */}
           <div className="relative my-3">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-sand-300" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-slate-400 font-semibold text-[10px]">
+              <span className="bg-[#FAF6EE] px-2 text-sand-500 font-semibold text-[10px]">
                 Or continue with email
               </span>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
+          <div className="flex bg-[#F5EFE3] p-1 rounded-2xl border border-sand-300 text-xs font-bold">
             <button
               type="button"
               onClick={() => {
@@ -148,8 +152,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               }}
               className={`flex-1 py-1.5 rounded-xl transition-all ${
                 tab === 'signin'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-sand-900 text-[#FAF6EE] shadow-xs'
+                  : 'text-sand-700 hover:text-sand-950'
               }`}
             >
               Sign In
@@ -162,8 +166,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               }}
               className={`flex-1 py-1.5 rounded-xl transition-all ${
                 tab === 'signup'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-sand-900 text-[#FAF6EE] shadow-xs'
+                  : 'text-sand-700 hover:text-sand-950'
               }`}
             >
               Create Account
@@ -173,47 +177,47 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
           <form onSubmit={handleEmailAuth} className="space-y-3.5">
             {tab === 'signup' && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                <label className="block text-xs font-bold text-sand-800 mb-1">Full Name</label>
                 <div className="relative">
-                  <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <UserIcon className="w-4 h-4 text-sand-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     placeholder="Your Name"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                    className="w-full pl-9 pr-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-medium text-sand-950 focus:ring-2 focus:ring-sand-400"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+              <label className="block text-xs font-bold text-sand-800 mb-1">Email Address</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-sand-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full pl-9 pr-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-medium text-sand-950 focus:ring-2 focus:ring-sand-400"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
+              <label className="block text-xs font-bold text-sand-800 mb-1">Password</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-sand-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full pl-9 pr-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-medium text-sand-950 focus:ring-2 focus:ring-sand-400"
                 />
               </div>
             </div>
@@ -221,7 +225,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] rounded-xl text-xs font-bold shadow-md shadow-sand-900/20 transition-all flex items-center justify-center gap-1.5 border border-sand-950"
             >
               <span>{loading ? 'Please wait...' : tab === 'signin' ? 'Sign In' : 'Create Account'}</span>
               <ArrowRight className="w-3.5 h-3.5" />

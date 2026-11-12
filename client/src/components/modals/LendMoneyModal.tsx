@@ -135,31 +135,31 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-sand-950/40 backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-xl bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-sand-300/70">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200/60 shadow-xs">
-              <HandCoins className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-sand-200 text-sand-900 flex items-center justify-center border border-sand-300 shadow-xs">
+              <HandCoins className="w-5 h-5 text-amber-700" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-1.5">
+              <h3 className="text-base font-bold text-sand-950 flex items-center gap-1.5">
                 <span>Worker Lending & Advances</span>
-                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-sand-200 text-sand-900 font-bold px-2 py-0.5 rounded-full border border-sand-300">
                   Khata
                 </span>
               </h3>
-              <p className="text-xs text-slate-500">Lend money now & auto-reduce from upcoming salary</p>
+              <p className="text-xs text-sand-600">Lend money now & auto-reduce from upcoming salary</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-full text-sand-600 hover:text-sand-950 hover:bg-sand-200 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -174,16 +174,16 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
         )}
 
         {/* Employee Selector Bar */}
-        <div className="mt-3 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
+        <div className="mt-3 p-3 bg-[#F5EFE3] rounded-2xl border border-sand-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex-1">
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-bold text-sand-700 uppercase tracking-wider mb-1">
                 Select Worker
               </label>
               <select
                 value={selectedEmpId}
                 onChange={(e) => setSelectedEmpId(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full px-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-bold text-sand-950 focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
               >
                 {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
@@ -194,9 +194,9 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
             </div>
 
             {/* Current Balance Display */}
-            <div className="bg-white px-3.5 py-2 rounded-xl border border-amber-200/80 shadow-2xs flex sm:flex-col justify-between items-center sm:items-end">
-              <span className="text-[10px] uppercase font-bold text-slate-400">Total Outstanding</span>
-              <span className={`text-base font-black ${currentBalance > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
+            <div className="bg-[#FAF6EE] px-3.5 py-2 rounded-xl border border-sand-300 shadow-2xs flex sm:flex-col justify-between items-center sm:items-end">
+              <span className="text-[10px] uppercase font-bold text-sand-500">Total Outstanding</span>
+              <span className={`text-base font-black ${currentBalance > 0 ? 'text-amber-700' : 'text-sand-800'}`}>
                 {formatINR(currentBalance)}
               </span>
             </div>
@@ -204,14 +204,14 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
         </div>
 
         {/* Tabs: Lend Money vs History */}
-        <div className="flex gap-2 border-b border-slate-100 my-3">
+        <div className="flex gap-2 border-b border-sand-300/70 my-3">
           <button
             type="button"
             onClick={() => setActiveTab('lend')}
             className={`pb-2 px-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'lend'
-                ? 'border-amber-500 text-amber-700'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
+                ? 'border-sand-900 text-sand-950'
+                : 'border-transparent text-sand-600 hover:text-sand-950'
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -222,8 +222,8 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
             onClick={() => setActiveTab('history')}
             className={`pb-2 px-3 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'history'
-                ? 'border-amber-500 text-amber-700'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
+                ? 'border-sand-900 text-sand-950'
+                : 'border-transparent text-sand-600 hover:text-sand-950'
             }`}
           >
             <History className="w-3.5 h-3.5" />
@@ -237,11 +237,11 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
             <form onSubmit={handleLendSubmit} className="space-y-3.5">
               {/* Amount */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-sand-800 mb-1">
                   Amount to Lend (₹ INR)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-500 text-sm">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sand-600 text-sm">
                     ₹
                   </span>
                   <input
@@ -251,7 +251,7 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="e.g. 500, 1000, 2000"
-                    className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-black text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full pl-8 pr-4 py-2.5 bg-[#FAF6EE] border border-sand-300 rounded-xl text-base font-black text-sand-950 focus:bg-[#FAF6EE] focus:ring-2 focus:ring-sand-400 focus:border-sand-500"
                     required
                   />
                 </div>
@@ -265,8 +265,8 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                       onClick={() => setAmount(quickAmt.toString())}
                       className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all ${
                         amount === quickAmt.toString()
-                          ? 'bg-amber-100 text-amber-900 border-amber-300'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                          ? 'bg-sand-900 text-[#FAF6EE] border-sand-950 shadow-2xs'
+                          : 'bg-[#F5EFE3] hover:bg-sand-200 text-sand-800 border-sand-300'
                       }`}
                     >
                       +₹{quickAmt}
@@ -278,31 +278,31 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
               {/* Date & Payment Method */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <label className="block text-xs font-bold text-sand-800 mb-1 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-sand-600" />
                     <span>Lending Date</span>
                   </label>
                   <input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+                    className="w-full px-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-sand-800 mb-1">
                     Disbursement Method
                   </label>
-                  <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+                  <div className="grid grid-cols-2 gap-1 bg-[#F5EFE3] p-1 rounded-xl border border-sand-300">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('cash')}
                       className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
                         paymentMethod === 'cash'
-                          ? 'bg-white text-slate-900 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-sand-900 text-[#FAF6EE] shadow-xs'
+                          : 'text-sand-600 hover:text-sand-950'
                       }`}
                     >
                       💵 Cash
@@ -312,8 +312,8 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                       onClick={() => setPaymentMethod('upi')}
                       className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
                         paymentMethod === 'upi'
-                          ? 'bg-white text-indigo-700 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-sand-900 text-[#FAF6EE] shadow-xs'
+                          : 'text-sand-600 hover:text-sand-950'
                       }`}
                     >
                       ⚡ UPI
@@ -324,28 +324,28 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
 
               {/* If UPI chosen: instant payment buttons */}
               {paymentMethod === 'upi' && upiLink && (
-                <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl space-y-2 animate-in fade-in">
-                  <p className="text-[11px] font-bold text-indigo-900">
+                <div className="p-3 bg-[#F5EFE3] border border-sand-300 rounded-2xl space-y-2 animate-in fade-in">
+                  <p className="text-[11px] font-bold text-sand-900">
                     Pay {formatINR(parseFloat(amount) || 0)} directly via UPI:
                   </p>
                   <div className="grid grid-cols-3 gap-1.5">
                     <a
                       href={upiLink.links.gpay}
-                      className="py-1.5 px-2 bg-white border border-indigo-100 rounded-xl flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 hover:bg-indigo-50 shadow-2xs"
+                      className="py-1.5 px-2 bg-[#FAF6EE] border border-sand-300 rounded-xl flex items-center justify-center gap-1 text-[11px] font-bold text-sand-900 hover:bg-sand-200 shadow-2xs"
                     >
                       <GooglePayLogo className="w-5 h-5" />
                       <span>GPay</span>
                     </a>
                     <a
                       href={upiLink.links.phonepe}
-                      className="py-1.5 px-2 bg-white border border-indigo-100 rounded-xl flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 hover:bg-indigo-50 shadow-2xs"
+                      className="py-1.5 px-2 bg-[#FAF6EE] border border-sand-300 rounded-xl flex items-center justify-center gap-1 text-[11px] font-bold text-sand-900 hover:bg-sand-200 shadow-2xs"
                     >
                       <PhonePeLogo className="w-5 h-5" />
                       <span>PhonePe</span>
                     </a>
                     <a
                       href={upiLink.links.paytm}
-                      className="py-1.5 px-2 bg-white border border-indigo-100 rounded-xl flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 hover:bg-indigo-50 shadow-2xs"
+                      className="py-1.5 px-2 bg-[#FAF6EE] border border-sand-300 rounded-xl flex items-center justify-center gap-1 text-[11px] font-bold text-sand-900 hover:bg-sand-200 shadow-2xs"
                     >
                       <PaytmLogo className="w-5 h-5" />
                       <span>Paytm</span>
@@ -356,8 +356,8 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
 
               {/* Note / Purpose */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5 text-slate-400" />
+                <label className="block text-xs font-bold text-sand-800 mb-1 flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5 text-sand-600" />
                   <span>Reason / Note (Optional)</span>
                 </label>
                 <input
@@ -365,13 +365,13 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                   placeholder="e.g. Festival advance, emergency medical, personal loan"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  className="w-full px-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs text-sand-950"
                 />
               </div>
 
               {/* Explanation Note */}
-              <div className="p-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="p-2.5 bg-sand-200/60 border border-sand-300 rounded-xl text-[11px] text-sand-900 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <span>
                   This amount will be added to <strong>{selectedEmployee?.fullName}</strong>'s balance. When paying salary in Quick Pay or Weekly Attendance, you can choose to reduce/deduct this amount anytime.
                 </span>
@@ -381,9 +381,9 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-sm font-bold shadow-md shadow-amber-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] rounded-xl text-sm font-bold shadow-md shadow-sand-900/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 border border-sand-950"
               >
-                <HandCoins className="w-4 h-4" />
+                <HandCoins className="w-4 h-4 text-amber-500" />
                 <span>Record Loan of {formatINR(parseFloat(amount) || 0)}</span>
               </button>
             </form>
@@ -392,27 +392,27 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
             <div className="space-y-3">
               {/* Direct Cash Repayment Trigger */}
               {!isRepayMode ? (
-                <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                <div className="flex items-center justify-between p-3 bg-[#F5EFE3] border border-sand-300 rounded-2xl">
                   <div>
-                    <span className="text-xs font-bold text-slate-800 block">Worker Returned Cash?</span>
-                    <span className="text-[11px] text-slate-500">Record direct repayment outside salary</span>
+                    <span className="text-xs font-bold text-sand-900 block">Worker Returned Cash?</span>
+                    <span className="text-[11px] text-sand-600">Record direct repayment outside salary</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsRepayMode(true)}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                    className="px-3 py-1.5 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] text-xs font-bold rounded-xl shadow-xs transition-colors border border-sand-950"
                   >
                     + Record Cash Repayment
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleRepaySubmit} className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2 animate-in fade-in">
+                <form onSubmit={handleRepaySubmit} className="p-3 bg-[#F5EFE3] border border-sand-300 rounded-2xl space-y-2 animate-in fade-in">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-950">Record Direct Cash Repayment</span>
+                    <span className="text-xs font-bold text-sand-950">Record Direct Cash Repayment</span>
                     <button
                       type="button"
                       onClick={() => setIsRepayMode(false)}
-                      className="text-slate-400 hover:text-slate-600 text-xs font-bold"
+                      className="text-sand-600 hover:text-sand-950 text-xs font-bold"
                     >
                       Cancel
                     </button>
@@ -426,7 +426,7 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                       value={repayAmount}
                       onChange={(e) => setRepayAmount(e.target.value)}
                       placeholder="Repayment amount (₹)"
-                      className="w-full px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900"
+                      className="w-full px-3 py-1.5 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-bold text-sand-950"
                       required
                     />
                     <input
@@ -434,13 +434,13 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                       value={repayNotes}
                       onChange={(e) => setRepayNotes(e.target.value)}
                       placeholder="Note (e.g. Returned ₹500 in cash)"
-                      className="w-full px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs"
+                      className="w-full px-3 py-1.5 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs text-sand-950"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold"
+                    className="w-full py-1.5 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] rounded-xl text-xs font-bold border border-sand-950"
                   >
                     Save Cash Repayment
                   </button>
@@ -449,8 +449,8 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
 
               {/* List of Ledger Entries */}
               {employeeAdvances.length === 0 ? (
-                <div className="py-8 text-center text-slate-400">
-                  <HandCoins className="w-8 h-8 mx-auto mb-2 opacity-40 text-amber-600" />
+                <div className="py-8 text-center text-sand-500">
+                  <HandCoins className="w-8 h-8 mx-auto mb-2 opacity-40 text-amber-700" />
                   <p className="text-xs font-medium">No loans or advances recorded for {selectedEmployee?.fullName} yet.</p>
                 </div>
               ) : (
@@ -462,16 +462,16 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                         key={adv.id}
                         className={`p-3 rounded-2xl border flex items-center justify-between ${
                           isGive
-                            ? 'bg-amber-50/40 border-amber-200/70'
-                            : 'bg-emerald-50/40 border-emerald-200/70'
+                            ? 'bg-amber-100/40 border-amber-300/70'
+                            : 'bg-emerald-100/40 border-emerald-300/70'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <div
                             className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                               isGive
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-emerald-100 text-emerald-700'
+                                ? 'bg-amber-200 text-amber-800'
+                                : 'bg-emerald-200 text-emerald-800'
                             }`}
                           >
                             {isGive ? (
@@ -482,12 +482,12 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-slate-900">
+                              <span className="text-xs font-bold text-sand-950">
                                 {isGive ? 'Lent to Worker' : adv.type === 'deduct' ? 'Deducted from Salary' : 'Direct Repayment'}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-medium">{adv.date}</span>
+                              <span className="text-[10px] text-sand-500 font-medium">{adv.date}</span>
                             </div>
-                            <p className="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-xs">
+                            <p className="text-[11px] text-sand-600 truncate max-w-[200px] sm:max-w-xs">
                               {adv.notes || (isGive ? 'Advance' : 'Salary deduction')}
                             </p>
                           </div>
@@ -495,7 +495,7 @@ export const LendMoneyModal: React.FC<LendMoneyModalProps> = ({
                         <div className="text-right">
                           <span
                             className={`text-sm font-black ${
-                              isGive ? 'text-amber-700' : 'text-emerald-700'
+                              isGive ? 'text-amber-800' : 'text-emerald-800'
                             }`}
                           >
                             {isGive ? `+${formatINR(adv.amount)}` : `-${formatINR(adv.amount)}`}

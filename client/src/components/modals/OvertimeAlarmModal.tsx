@@ -135,67 +135,67 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-sand-950/40 backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto space-y-5"
+        className="relative w-full max-w-lg bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-4 sm:p-6 animate-in fade-in zoom-in-95 max-h-[92vh] overflow-y-auto space-y-5"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between pb-3 border-b border-sand-300/70">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-              <Clock className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-sand-200 text-sand-900 border border-sand-300 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-sand-800" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-base font-black text-sand-950 flex items-center gap-2">
                 <span>Shift & Overtime Alarm</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
                   Live Audible
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-sand-600">
                 Audible alarm alerts you to mark attendance & OT on time
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sand-600 hover:text-sand-950 hover:bg-sand-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Test Audio Button */}
-        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-          <div className="flex items-center gap-2 text-slate-700">
-            <Volume2 className="w-4 h-4 text-brand-600" />
-            <span className="font-semibold">Alarm Speaker Test</span>
+        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-[#F5EFE3] border border-sand-300 text-xs">
+          <div className="flex items-center gap-2 text-sand-900">
+            <Volume2 className="w-4 h-4 text-amber-700" />
+            <span className="font-bold">Alarm Speaker Test</span>
           </div>
           <button
             type="button"
             onClick={handleTestSound}
-            className="px-3 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-bold text-[11px] flex items-center gap-1.5 transition-all shadow-2xs"
+            className="px-3 py-1 bg-sand-200 hover:bg-sand-300 border border-sand-300 rounded-xl text-sand-900 font-bold text-[11px] flex items-center gap-1.5 transition-all shadow-2xs"
           >
-            <Play className="w-3 h-3 fill-slate-700" />
+            <Play className="w-3 h-3 fill-sand-800 text-sand-800" />
             <span>Test Sound</span>
           </button>
         </div>
 
         {toastNotice && (
-          <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+          <div className="p-2.5 rounded-xl bg-emerald-100/70 border border-emerald-300 text-emerald-950 text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
             <span>{toastNotice}</span>
           </div>
         )}
 
         {/* 1. DAILY SHIFT END ALARM (DEFAULT 5:30 PM) */}
-        <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+        <div className="bg-[#F5EFE3] p-4 rounded-2xl border border-sand-300 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-600" />
-              <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+              <Calendar className="w-4 h-4 text-sand-800" />
+              <span className="text-xs font-bold text-sand-950 uppercase tracking-wider">
                 1. Daily Shift End Alarm
               </span>
             </div>
@@ -209,11 +209,11 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                 }
                 className="sr-only peer"
               />
-              <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+              <div className="w-9 h-5 bg-sand-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-sand-400 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
             </label>
           </div>
 
-          <p className="text-[11px] text-slate-600">
+          <p className="text-[11px] text-sand-600">
             Rings every day to alert you to mark worker shift attendance at end of day.
           </p>
 
@@ -226,16 +226,16 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                   onChange={(e) =>
                     setShiftSettings((prev) => ({ ...prev, shiftEndTime: e.target.value }))
                   }
-                  className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-slate-900 shadow-2xs focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full px-3 py-2 bg-[#FAF6EE] border border-sand-300 rounded-xl text-xs font-bold text-sand-950 shadow-2xs focus:ring-2 focus:ring-sand-400"
                   required
                 />
               </div>
-              <span className="text-xs font-bold text-indigo-700 bg-white px-2.5 py-2 rounded-xl border border-indigo-200 shadow-2xs">
+              <span className="text-xs font-bold text-sand-900 bg-sand-200 px-2.5 py-2 rounded-xl border border-sand-300 shadow-2xs">
                 {format12Hour(shiftSettings.shiftEndTime)}
               </span>
               <button
                 type="submit"
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
+                className="px-3.5 py-2 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] text-xs font-bold rounded-xl transition-all shadow-xs border border-sand-950"
               >
                 Set Daily
               </button>
@@ -246,24 +246,24 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
         {/* 2. OVERTIME (OT) ALARM EXTENSION (e.g. ADD 1 HOUR) */}
         <form onSubmit={handleStartOtAlarm} className="space-y-4 pt-1">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Timer className="w-4 h-4 text-amber-600" />
+            <label className="text-xs font-bold text-sand-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Timer className="w-4 h-4 text-amber-700" />
               <span>2. Overtime (OT) Alarm Extension</span>
             </label>
-            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+            <span className="text-[10px] font-bold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded-full border border-amber-300">
               Custom OT
             </span>
           </div>
 
           {/* Select Worker */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-semibold text-slate-600">
+            <label className="block text-[11px] font-bold text-sand-700">
               Worker Doing Overtime:
             </label>
             <select
               value={selectedEmployeeId}
               onChange={(e) => setSelectedEmployeeId(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500/20"
+              className="w-full px-3 py-2.5 bg-[#F5EFE3] border border-sand-300 rounded-xl text-xs font-semibold text-sand-950 focus:ring-2 focus:ring-sand-400"
             >
               {employees.map((emp) => (
                 <option key={emp.id} value={emp.id}>
@@ -275,7 +275,7 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
 
           {/* Choose OT Duration (+1 Hour, etc.) */}
           <div className="space-y-2">
-            <label className="block text-[11px] font-semibold text-slate-600">
+            <label className="block text-[11px] font-bold text-sand-700">
               Select Overtime Duration to Add:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -288,8 +288,8 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                     onClick={() => setOtHours(opt.val)}
                     className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
                       isSelected
-                        ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
+                        : 'bg-[#F5EFE3] hover:bg-sand-200 text-sand-900 border-sand-300'
                     }`}
                   >
                     <span>{opt.label}</span>
@@ -303,8 +303,8 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
           </div>
 
           {/* Timing Mode: Extend from 5:30 PM vs From Now */}
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <label className="block text-[11px] font-semibold text-slate-700">
+          <div className="p-3 bg-[#F5EFE3] rounded-2xl border border-sand-300 space-y-2">
+            <label className="block text-[11px] font-bold text-sand-800">
               Alarm Schedule Timing:
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -313,13 +313,13 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                 onClick={() => setTimingMode('from_shift_end')}
                 className={`p-2.5 rounded-xl border text-left transition-all ${
                   timingMode === 'from_shift_end'
-                    ? 'bg-white border-brand-500 text-brand-900 shadow-2xs font-bold'
-                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                    ? 'bg-[#FAF6EE] border-sand-400 text-sand-950 shadow-2xs font-bold'
+                    : 'bg-sand-200/80 border-sand-300 text-sand-700'
                 }`}
               >
                 <span className="block font-bold">Extend Shift End ({format12Hour(shiftSettings.shiftEndTime)})</span>
-                <span className="text-[10px] text-slate-500 block mt-0.5">
-                  Rings at <strong className="text-amber-700">{projectedOtTime}</strong> ({otHours}h OT)
+                <span className="text-[10px] text-sand-600 block mt-0.5">
+                  Rings at <strong className="text-amber-800">{projectedOtTime}</strong> ({otHours}h OT)
                 </span>
               </button>
 
@@ -328,13 +328,13 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                 onClick={() => setTimingMode('from_now')}
                 className={`p-2.5 rounded-xl border text-left transition-all ${
                   timingMode === 'from_now'
-                    ? 'bg-white border-brand-500 text-brand-900 shadow-2xs font-bold'
-                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                    ? 'bg-[#FAF6EE] border-sand-400 text-sand-950 shadow-2xs font-bold'
+                    : 'bg-sand-200/80 border-sand-300 text-sand-700'
                 }`}
               >
                 <span className="block font-bold">Countdown from Now</span>
-                <span className="text-[10px] text-slate-500 block mt-0.5">
-                  Rings after <strong className="text-amber-700">{otHours} hour(s)</strong> from now
+                <span className="text-[10px] text-sand-600 block mt-0.5">
+                  Rings after <strong className="text-amber-800">{otHours} hour(s)</strong> from now
                 </span>
               </button>
             </div>
@@ -353,13 +353,13 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
         </form>
 
         {/* 3. ACTIVE OVERTIME ALARMS LIST */}
-        <div className="space-y-2 pt-2 border-t border-slate-100">
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+        <div className="space-y-2 pt-2 border-t border-sand-300/70">
+          <h4 className="text-xs font-bold text-sand-900 uppercase tracking-wider flex items-center justify-between">
             <span>Running Alarms ({alarms.filter((a) => a.status === 'running' || a.status === 'ringing').length})</span>
           </h4>
 
           {alarms.filter((a) => a.status === 'running' || a.status === 'ringing').length === 0 ? (
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60 text-center text-xs text-slate-400">
+            <div className="p-3.5 rounded-2xl bg-[#F5EFE3] border border-sand-300 text-center text-xs text-sand-500">
               No active overtime alarms running. Choose a worker and duration above to start an alarm.
             </div>
           ) : (
@@ -380,19 +380,19 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                       key={alarm.id}
                       className={`p-3 rounded-2xl border flex items-center justify-between gap-3 ${
                         isRinging
-                          ? 'bg-rose-50 border-rose-300 animate-pulse text-rose-900'
-                          : 'bg-amber-50/70 border-amber-200 text-amber-950'
+                          ? 'bg-rose-100/80 border-rose-400 animate-pulse text-rose-950'
+                          : 'bg-amber-100/60 border-amber-300 text-amber-950'
                       }`}
                     >
                       <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-xs truncate">{alarm.employeeName}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/90 border border-amber-300 shrink-0">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#FAF6EE] border border-amber-300 shrink-0">
                             +{alarm.overtimeHours}h OT
                           </span>
                         </div>
-                        <p className="text-[11px] font-mono font-bold text-amber-800 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <p className="text-[11px] font-mono font-bold text-amber-900 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-700" />
                           <span>
                             {isRinging
                               ? '🚨 RINGING! TIME IS UP'
@@ -404,7 +404,7 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCancelAlarm(alarm.id)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white rounded-xl transition-colors shrink-0"
+                        className="p-2 text-sand-500 hover:text-rose-600 hover:bg-sand-200 rounded-xl transition-colors shrink-0"
                         title="Cancel Alarm"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -253,18 +253,18 @@ export const AttendanceSection: React.FC = () => {
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-sand-300/80 shadow-[0_10px_30px_rgba(183,176,158,0.25)] p-3.5 sm:p-6 space-y-4 sm:space-y-5">
+    <div className="bg-[#FAF6EE] backdrop-blur-md rounded-3xl border border-sand-300 shadow-[0_12px_32px_rgba(183,176,158,0.25)] p-3.5 sm:p-6 space-y-4 sm:space-y-5">
       {/* Top Banner & Week Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-sand-300/70">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200/60 mb-1">
-            <CalendarDays className="w-3 h-3 text-emerald-600" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100/70 text-emerald-900 text-[11px] font-bold border border-emerald-300/80 mb-1">
+            <CalendarDays className="w-3 h-3 text-emerald-700" />
             <span>Attendance & Weekly Payroll</span>
           </div>
-          <h2 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-base sm:text-xl font-black text-sand-950 tracking-tight">
             Daily Attendance & Weekly Payout
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-500">
+          <p className="text-[11px] sm:text-xs text-sand-600">
             Mark daily worker attendance & OT; settle wages directly via UPI at week end.
           </p>
         </div>
@@ -272,21 +272,21 @@ export const AttendanceSection: React.FC = () => {
         {/* View Toggle & Week Navigator */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 self-start sm:self-auto">
           {/* Week switcher */}
-          <div className="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+          <div className="flex items-center bg-sand-200 p-0.5 sm:p-1 rounded-xl border border-sand-300 text-xs font-semibold">
             <button
               onClick={handlePrevWeek}
-              className="p-1 hover:bg-white rounded-lg text-slate-600 hover:text-slate-900 transition-colors"
+              className="p-1 hover:bg-[#FAF6EE] rounded-lg text-sand-700 hover:text-sand-950 transition-colors"
               title="Previous Week"
             >
               <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
-            <span className="px-1.5 font-mono text-[10px] sm:text-[11px] text-slate-700 whitespace-nowrap">
+            <span className="px-1.5 font-mono text-[10px] sm:text-[11px] text-sand-900 whitespace-nowrap">
               {weekDays[0].dayNumber} {weekDays[0].date.toLocaleDateString('en-IN', { month: 'short' })} –{' '}
               {weekDays[6].dayNumber} {weekDays[6].date.toLocaleDateString('en-IN', { month: 'short' })}
             </span>
             <button
               onClick={handleNextWeek}
-              className="p-1 hover:bg-white rounded-lg text-slate-600 hover:text-slate-900 transition-colors"
+              className="p-1 hover:bg-[#FAF6EE] rounded-lg text-sand-700 hover:text-sand-950 transition-colors"
               title="Next Week"
             >
               <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -294,13 +294,13 @@ export const AttendanceSection: React.FC = () => {
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+          <div className="flex items-center bg-sand-200 p-0.5 sm:p-1 rounded-xl border border-sand-300 text-xs font-semibold">
             <button
               onClick={() => setActiveTab('daily')}
               className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all text-[11px] sm:text-xs ${
                 activeTab === 'daily'
-                  ? 'bg-white text-brand-700 shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-sand-900 text-[#FAF6EE] shadow-xs font-bold'
+                  : 'text-sand-700 hover:text-sand-950'
               }`}
             >
               Daily
@@ -309,8 +309,8 @@ export const AttendanceSection: React.FC = () => {
               onClick={() => setActiveTab('weekly')}
               className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-all text-[11px] sm:text-xs ${
                 activeTab === 'weekly'
-                  ? 'bg-white text-brand-700 shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-sand-900 text-[#FAF6EE] shadow-xs font-bold'
+                  : 'text-sand-700 hover:text-sand-950'
               }`}
             >
               Weekly Pay
@@ -345,10 +345,10 @@ export const AttendanceSection: React.FC = () => {
               }}
               className={`py-1.5 px-0.5 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center transition-all border relative ${
                 isSelected
-                  ? 'bg-brand-600 text-white border-brand-600 shadow-md ring-2 ring-brand-400/40'
+                  ? 'bg-sand-900 text-[#FAF6EE] border-sand-950 shadow-md ring-2 ring-sand-400/50'
                   : d.isToday
-                  ? 'bg-brand-50 text-brand-800 border-brand-200'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200/80'
+                  ? 'bg-sand-200 text-sand-950 border-sand-400'
+                  : 'bg-[#F5EFE3] hover:bg-sand-200 text-sand-800 border-sand-300'
               }`}
             >
               <span className="text-[9px] sm:text-[10px] font-semibold uppercase">{d.dayName}</span>
@@ -368,13 +368,13 @@ export const AttendanceSection: React.FC = () => {
               ) : d.isToday ? (
                 <span
                   className={`text-[7px] sm:text-[8px] font-bold px-1 rounded-full mt-0.5 ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-brand-200 text-brand-800'
+                    isSelected ? 'bg-white/20 text-white' : 'bg-sand-300 text-sand-900'
                   }`}
                 >
                   TODAY
                 </span>
               ) : (
-                <span className="text-[8px] text-slate-300 mt-0.5">•</span>
+                <span className="text-[8px] text-sand-400 mt-0.5">•</span>
               )}
             </button>
           );
@@ -386,16 +386,16 @@ export const AttendanceSection: React.FC = () => {
         <div
           className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-between gap-2 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200 ${
             feedbackToast.status === 'present'
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+              ? 'bg-emerald-100/70 text-emerald-950 border-emerald-300'
               : feedbackToast.status === 'half-day'
-              ? 'bg-sky-50 text-sky-900 border-sky-300'
-              : 'bg-rose-50 text-rose-900 border-rose-300'
+              ? 'bg-sky-100/70 text-sky-950 border-sky-300'
+              : 'bg-rose-100/70 text-rose-950 border-rose-300'
           }`}
         >
           <div className="flex items-center gap-2">
-            {feedbackToast.status === 'present' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-            {feedbackToast.status === 'half-day' && <Clock className="w-4 h-4 text-sky-600" />}
-            {feedbackToast.status === 'absent' && <XCircle className="w-4 h-4 text-rose-600" />}
+            {feedbackToast.status === 'present' && <CheckCircle2 className="w-4 h-4 text-emerald-700" />}
+            {feedbackToast.status === 'half-day' && <Clock className="w-4 h-4 text-sky-700" />}
+            {feedbackToast.status === 'absent' && <XCircle className="w-4 h-4 text-rose-700" />}
             <span>
               {feedbackToast.status === 'present'
                 ? `✓ Marked Present for ${feedbackToast.workerName}`
@@ -405,7 +405,7 @@ export const AttendanceSection: React.FC = () => {
             </span>
           </div>
           {feedbackToast.amount !== undefined && (
-            <span className="font-extrabold px-2 py-0.5 bg-white rounded-lg shadow-xs border border-current text-[11px]">
+            <span className="font-extrabold px-2 py-0.5 bg-[#FAF6EE] rounded-lg shadow-xs border border-current text-[11px]">
               Earned: {formatINR(feedbackToast.amount)}
             </span>
           )}
@@ -415,11 +415,11 @@ export const AttendanceSection: React.FC = () => {
       {/* Mode 1: Daily Attendance Marking */}
       {activeTab === 'daily' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F5EFE3] p-3 rounded-2xl border border-sand-300 text-xs">
             <div>
-              <span className="font-bold text-slate-900">
+              <span className="font-bold text-sand-950">
                 Marking Attendance for:{' '}
-                <span className="text-brand-700 font-mono">
+                <span className="text-sand-900 font-mono font-bold">
                   {new Date(selectedDateStr).toLocaleDateString('en-IN', {
                     weekday: 'long',
                     day: 'numeric',
@@ -439,10 +439,10 @@ export const AttendanceSection: React.FC = () => {
                 onClick={async () => {
                   await cleanDuplicateData();
                 }}
-                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs flex items-center gap-1 transition-colors"
+                className="px-2.5 py-1.5 bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 font-semibold rounded-xl text-xs flex items-center gap-1 transition-colors"
                 title="Remove duplicate attendance and dummy records"
               >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <Sparkles className="w-3.5 h-3.5 text-sand-800" />
                 <span>Remove Duplicates</span>
               </button>
 
@@ -452,9 +452,9 @@ export const AttendanceSection: React.FC = () => {
                   await markAllAttendance(selectedDateStr, 'present');
                   triggerFeedback('All Active Workers', 'present');
                 }}
-                className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors"
+                className="px-3 py-1.5 bg-emerald-200 hover:bg-emerald-300 text-emerald-950 font-bold rounded-xl text-xs flex items-center gap-1 shadow-xs transition-colors border border-emerald-300"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-800" />
                 <span>Mark All Present</span>
               </button>
             </div>
@@ -480,21 +480,21 @@ export const AttendanceSection: React.FC = () => {
               // Distinctive card color styling based on attendance status
               const cardBgStyle =
                 status === 'present'
-                  ? 'bg-gradient-to-r from-emerald-50/90 via-emerald-50/40 to-white border-2 border-emerald-400 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-400/20'
+                  ? 'bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-[#FAF6EE] border-2 border-emerald-500 shadow-sm shadow-emerald-500/10'
                   : status === 'half-day'
-                  ? 'bg-gradient-to-r from-sky-50/90 via-sky-50/40 to-white border-2 border-sky-400 shadow-sm shadow-sky-500/10 ring-1 ring-sky-400/20'
+                  ? 'bg-gradient-to-r from-sky-100/70 via-sky-50/40 to-[#FAF6EE] border-2 border-sky-500 shadow-sm shadow-sky-500/10'
                   : status === 'absent'
-                  ? 'bg-gradient-to-r from-rose-50/90 via-rose-50/40 to-white border-2 border-rose-300 shadow-sm shadow-rose-500/10 ring-1 ring-rose-400/20'
-                  : 'bg-white border-2 border-dashed border-slate-300 hover:border-slate-400';
+                  ? 'bg-gradient-to-r from-rose-100/70 via-rose-50/40 to-[#FAF6EE] border-2 border-rose-400 shadow-sm shadow-rose-500/10'
+                  : 'bg-[#F5EFE3] border-2 border-dashed border-sand-400 hover:border-sand-500';
 
               const avatarBg =
                 status === 'present'
                   ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
                   : status === 'half-day'
-                  ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-300'
+                  ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-300'
                   : status === 'absent'
                   ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-300'
-                  : 'bg-slate-400 text-white';
+                  : 'bg-sand-400 text-sand-950';
 
               return (
                 <div
@@ -508,7 +508,7 @@ export const AttendanceSection: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900 text-sm truncate">{emp.fullName}</p>
+                        <p className="font-bold text-sand-950 text-sm truncate">{emp.fullName}</p>
                         {/* Live Color Status Badge */}
                         {status === 'present' && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border border-emerald-300">
@@ -517,8 +517,8 @@ export const AttendanceSection: React.FC = () => {
                           </span>
                         )}
                         {status === 'half-day' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-extrabold border border-sky-300">
-                            <Clock className="w-3 h-3 text-sky-600" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold border border-amber-300">
+                            <Clock className="w-3 h-3 text-amber-700" />
                             <span>Half-Day (0.5)</span>
                           </span>
                         )}
@@ -529,28 +529,28 @@ export const AttendanceSection: React.FC = () => {
                           </span>
                         )}
                         {status === 'unmarked' && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">
-                            <AlertCircle className="w-3 h-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sand-200 text-sand-700 text-[10px] font-bold border border-sand-300">
+                            <AlertCircle className="w-3 h-3 text-sand-500" />
                             <span>Unmarked</span>
                           </span>
                         )}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 text-xs mt-0.5">
-                        <span className="font-mono text-slate-500">{emp.phone}</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="font-mono text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded text-[11px] font-semibold border border-brand-100">
+                        <span className="font-mono text-sand-600">{emp.phone}</span>
+                        <span className="text-sand-400">•</span>
+                        <span className="font-mono text-sand-950 bg-[#F5EFE3] px-1.5 py-0.5 rounded text-[11px] font-semibold border border-sand-300">
                           {emp.upiId}
                         </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="font-semibold text-slate-700">{formatINR(shiftRate)}/shift</span>
+                        <span className="text-sand-400">•</span>
+                        <span className="font-semibold text-sand-800">{formatINR(shiftRate)}/shift</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Attendance Status Buttons with Color Highlights */}
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <div className="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded-xl border border-slate-200 text-[11px] sm:text-xs font-bold">
+                    <div className="flex items-center bg-[#F5EFE3] p-0.5 sm:p-1 rounded-xl border border-sand-300 text-[11px] sm:text-xs font-bold">
                       <button
                         type="button"
                         onClick={() => {
@@ -617,9 +617,9 @@ export const AttendanceSection: React.FC = () => {
 
                     {/* Overtime Counter for the Day (supports up to 2 decimal places) */}
                     {status !== 'absent' && (
-                      <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-200 text-xs shadow-xs">
-                        <Clock className="w-3 h-3 text-amber-600" />
-                        <span className="font-semibold text-slate-600 text-[11px]">OT:</span>
+                      <div className="flex items-center gap-1 bg-[#FAF6EE] px-2 py-1 rounded-xl border border-sand-300 text-xs shadow-xs">
+                        <Clock className="w-3 h-3 text-amber-700" />
+                        <span className="font-semibold text-sand-700 text-[11px]">OT:</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -631,7 +631,7 @@ export const AttendanceSection: React.FC = () => {
                               overtimeHours: newOt,
                             });
                           }}
-                          className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors"
+                          className="w-5 h-5 rounded bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 font-bold flex items-center justify-center text-xs transition-colors"
                         >
                           -
                         </button>
@@ -651,9 +651,9 @@ export const AttendanceSection: React.FC = () => {
                               overtimeHours: newOt,
                             });
                           }}
-                          className="font-bold text-amber-700 text-xs w-11 text-center bg-slate-50 border border-slate-200 rounded px-0.5 py-0.5 focus:bg-white"
+                          className="font-bold text-amber-800 text-xs w-11 text-center bg-[#F5EFE3] border border-sand-300 rounded px-0.5 py-0.5 focus:bg-[#FAF6EE]"
                         />
-                        <span className="text-[10px] text-slate-400 font-semibold">h</span>
+                        <span className="text-[10px] text-sand-500 font-semibold">h</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -665,7 +665,7 @@ export const AttendanceSection: React.FC = () => {
                               overtimeHours: newOt,
                             });
                           }}
-                          className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs transition-colors"
+                          className="w-5 h-5 rounded bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 font-bold flex items-center justify-center text-xs transition-colors"
                         >
                           +
                         </button>
@@ -717,9 +717,9 @@ export const AttendanceSection: React.FC = () => {
                 Review accumulated shifts and overtime hours for the week and settle wages directly to workers via UPI.
               </p>
             </div>
-            <div className="font-bold text-xs text-brand-800 bg-white px-3 py-1.5 rounded-xl border border-brand-200 shadow-xs">
+            <div className="font-bold text-xs text-sand-900 bg-[#FAF6EE] px-3 py-1.5 rounded-xl border border-sand-300 shadow-xs">
               Total Weekly Payable:{' '}
-              <span className="text-brand-700 text-sm font-black">
+              <span className="text-sand-950 text-sm font-black">
                 {formatINR(weeklyWorkerSummary.reduce((sum, w) => sum + (w.isFullyPaid ? 0 : w.totalPayable), 0))}
               </span>
             </div>
@@ -731,8 +731,8 @@ export const AttendanceSection: React.FC = () => {
               const cardBorder = item.isFullyPaid
                 ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-400/20'
                 : item.totalPayable > 0
-                ? 'bg-white border-indigo-200/80 shadow-xs'
-                : 'bg-white border-slate-200/90 shadow-xs';
+                ? 'bg-[#FAF6EE] border-sand-300 shadow-xs'
+                : 'bg-[#FAF6EE] border-sand-300 shadow-xs';
 
               return (
                 <div
@@ -742,17 +742,17 @@ export const AttendanceSection: React.FC = () => {
                   {/* Worker Information */}
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl font-bold flex items-center justify-center text-xs sm:text-sm shrink-0 ${
-                      item.isFullyPaid ? 'bg-emerald-600 text-white ring-2 ring-emerald-300' : 'bg-indigo-600 text-white'
+                      item.isFullyPaid ? 'bg-emerald-600 text-white ring-2 ring-emerald-300' : 'bg-sand-900 text-[#EBE2CC]'
                     }`}>
                       {item.employee.fullName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 text-sm">{item.employee.fullName}</p>
-                      <p className="font-mono text-xs text-brand-700 font-semibold">{item.employee.upiId}</p>
-                      <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 mt-0.5">
+                      <p className="font-bold text-sand-950 text-sm">{item.employee.fullName}</p>
+                      <p className="font-mono text-xs text-sand-800 font-semibold">{item.employee.upiId}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-sand-600 mt-0.5">
                         <span>Rate: {formatINR(item.shiftRate)}/shift • OT: {formatINR(item.hourlyOtRate)}/hr</span>
                         {item.employee.advanceBalance && item.employee.advanceBalance > 0 ? (
-                          <span className="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                          <span className="font-bold text-amber-800 bg-sand-200 px-1.5 py-0.2 rounded border border-sand-300">
                             Loan: {formatINR(item.employee.advanceBalance)}
                           </span>
                         ) : null}
@@ -761,10 +761,10 @@ export const AttendanceSection: React.FC = () => {
                   </div>
 
                   {/* Summary of Shifts & OT */}
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-200/80">
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs bg-[#F5EFE3] p-2 sm:p-2.5 rounded-xl border border-sand-300">
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">Shifts</span>
-                      <span className="font-bold text-slate-800">{item.totalShifts}</span>
+                      <span className="text-[10px] text-sand-500 uppercase font-semibold block">Shifts</span>
+                      <span className="font-bold text-sand-950">{item.totalShifts}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-semibold block">Overtime</span>
@@ -860,44 +860,44 @@ export const AttendanceSection: React.FC = () => {
 
       {/* Weekly UPI Payment Modal Drawer */}
       {payingWorkerData && payingUpiDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sand-950/40 backdrop-blur-xs">
+          <div className="relative w-full max-w-md bg-[#FAF6EE] rounded-3xl shadow-2xl border border-sand-300 p-5 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-sand-300/70">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
-                  <Zap className="w-4 h-4 fill-brand-600 text-brand-600" />
+                <div className="w-9 h-9 rounded-xl bg-sand-200 text-sand-900 flex items-center justify-center font-bold border border-sand-300">
+                  <Zap className="w-4 h-4 fill-sand-800 text-sand-800" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Weekly Wage UPI Payout</h3>
-                  <p className="text-[11px] text-slate-500">{payingWorkerData.employee.fullName}</p>
+                  <h3 className="text-sm font-bold text-sand-950">Weekly Wage UPI Payout</h3>
+                  <p className="text-[11px] text-sand-600">{payingWorkerData.employee.fullName}</p>
                 </div>
               </div>
               <button
                 onClick={() => setPayingWorkerData(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 text-sm font-bold"
+                className="text-sand-500 hover:text-sand-900 p-1 text-sm font-bold"
               >
                 ✕
               </button>
             </div>
 
             {/* Breakdown Card */}
-            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-2">
-              <div className="flex justify-between text-slate-600">
+            <div className="bg-[#F5EFE3] p-3.5 rounded-2xl border border-sand-300 text-xs space-y-2">
+              <div className="flex justify-between text-sand-700">
                 <span>Shifts Worked:</span>
-                <span className="font-bold text-slate-900">
+                <span className="font-bold text-sand-950">
                   {payingWorkerData.shiftsCount} shifts × {formatINR(payingWorkerData.employee.shiftRate || 800)} = {formatINR(payingWorkerData.shiftPay)}
                 </span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-sand-700">
                 <span>Overtime Worked:</span>
-                <span className="font-bold text-amber-700">
+                <span className="font-bold text-amber-800">
                   +{payingWorkerData.overtimeHours}h OT = {formatINR(payingWorkerData.overtimePay)}
                 </span>
               </div>
 
               {/* Advance Loan Deduction Option if worker has an outstanding loan */}
               {workerAdvanceBal > 0 && (
-                <div className="p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1.5 my-1">
+                <div className="p-2.5 bg-amber-100/40 border border-amber-300 rounded-xl space-y-1.5 my-1">
                   <div className="flex items-center justify-between">
                     <label className="text-[11px] font-bold text-amber-950 flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -910,18 +910,18 @@ export const AttendanceSection: React.FC = () => {
                             setWeeklyDeductionAmount(Math.min(workerAdvanceBal, grossWeeklyPay));
                           }
                         }}
-                        className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
+                        className="rounded text-amber-700 focus:ring-amber-500 w-3.5 h-3.5"
                       />
                       <span>Reduce from Loan / Advance</span>
                     </label>
-                    <span className="text-[10px] font-bold text-amber-800 bg-white px-2 py-0.5 rounded-md border border-amber-200">
+                    <span className="text-[10px] font-bold text-amber-900 bg-[#FAF6EE] px-2 py-0.5 rounded-md border border-amber-300">
                       Bal: {formatINR(workerAdvanceBal)}
                     </span>
                   </div>
 
                   {weeklyDeductAdvance && (
                     <div className="flex items-center gap-1.5 pt-1 animate-in fade-in">
-                      <span className="text-xs font-bold text-slate-500">₹</span>
+                      <span className="text-xs font-bold text-sand-600">₹</span>
                       <input
                         type="number"
                         step="any"
@@ -930,12 +930,12 @@ export const AttendanceSection: React.FC = () => {
                         value={weeklyDeductionAmount}
                         onChange={(e) => setWeeklyDeductionAmount(e.target.value)}
                         placeholder="Amount to deduct"
-                        className="w-full py-1 px-2 text-xs font-bold bg-white border border-amber-300 rounded-lg text-slate-900"
+                        className="w-full py-1 px-2 text-xs font-bold bg-[#FAF6EE] border border-amber-300 rounded-lg text-sand-950"
                       />
                       <button
                         type="button"
                         onClick={() => setWeeklyDeductionAmount(Math.min(workerAdvanceBal, grossWeeklyPay))}
-                        className="px-2 py-1 text-[10px] font-bold bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-lg shrink-0 transition-colors"
+                        className="px-2 py-1 text-[10px] font-bold bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-lg shrink-0 transition-colors border border-amber-300"
                       >
                         Full
                       </button>
@@ -945,43 +945,43 @@ export const AttendanceSection: React.FC = () => {
               )}
 
               {actualWeeklyDeduction > 0 && (
-                <div className="flex justify-between text-rose-600 font-bold">
+                <div className="flex justify-between text-rose-700 font-bold">
                   <span>Less Advance Deduction:</span>
                   <span>-{formatINR(actualWeeklyDeduction)}</span>
                 </div>
               )}
 
-              <div className="flex justify-between pt-2 border-t border-slate-200 text-sm">
-                <span className="font-bold text-slate-900">Total Net Weekly Payable:</span>
-                <span className="font-black text-brand-700 text-base">{formatINR(netWeeklyPayable, true)}</span>
+              <div className="flex justify-between pt-2 border-t border-sand-300 text-sm">
+                <span className="font-bold text-sand-950">Total Net Weekly Payable:</span>
+                <span className="font-black text-sand-950 text-base">{formatINR(netWeeklyPayable, true)}</span>
               </div>
-              <div className="flex justify-between text-[11px] text-slate-500 pt-1">
+              <div className="flex justify-between text-[11px] text-sand-600 pt-1">
                 <span>Payee UPI VPA:</span>
-                <span className="font-mono font-bold text-brand-700">{payingUpiDetails.payeeAddress}</span>
+                <span className="font-mono font-bold text-sand-900">{payingUpiDetails.payeeAddress}</span>
               </div>
             </div>
 
             {/* Direct App Launchers */}
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-slate-700 uppercase">Pay via Installed App:</p>
+              <p className="text-[11px] font-bold text-sand-700 uppercase">Pay via Installed App:</p>
               <div className="grid grid-cols-3 gap-2">
                 <a
                   href={payingUpiDetails.links.gpay}
-                  className="py-2.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-center text-xs font-bold text-slate-800 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
+                  className="py-2.5 px-2 bg-[#F5EFE3] hover:bg-sand-200 border border-sand-300 hover:border-sand-400 rounded-xl text-center text-xs font-bold text-sand-900 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
                 >
                   <GooglePayLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                   <span className="truncate w-full font-semibold">Google Pay</span>
                 </a>
                 <a
                   href={payingUpiDetails.links.phonepe}
-                  className="py-2.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-center text-xs font-bold text-slate-800 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
+                  className="py-2.5 px-2 bg-[#F5EFE3] hover:bg-sand-200 border border-sand-300 hover:border-sand-400 rounded-xl text-center text-xs font-bold text-sand-900 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
                 >
                   <PhonePeLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                   <span className="truncate w-full font-semibold">PhonePe</span>
                 </a>
                 <a
                   href={payingUpiDetails.links.paytm}
-                  className="py-2.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-center text-xs font-bold text-slate-800 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
+                  className="py-2.5 px-2 bg-[#F5EFE3] hover:bg-sand-200 border border-sand-300 hover:border-sand-400 rounded-xl text-center text-xs font-bold text-sand-900 flex flex-col items-center gap-1 shadow-2xs hover:shadow-xs transition-all group"
                 >
                   <PaytmLogo className="w-6 h-6 transition-transform group-hover:scale-105" />
                   <span className="truncate w-full font-semibold">Paytm</span>
@@ -994,7 +994,7 @@ export const AttendanceSection: React.FC = () => {
                   onClick={() => {
                     if (payingUpiDetails?.uri) window.location.href = payingUpiDetails.uri;
                   }}
-                  className="flex-1 py-2.5 px-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                  className="flex-1 py-2.5 px-3 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-sand-900/20 border border-sand-950 transition-all"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Open Any UPI App</span>
@@ -1003,7 +1003,7 @@ export const AttendanceSection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsQrOpen(true)}
-                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1"
+                  className="px-3.5 py-2.5 bg-sand-200 hover:bg-sand-300 text-sand-900 border border-sand-300 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
                 >
                   <QrCode className="w-4 h-4" />
                   <span>QR</span>

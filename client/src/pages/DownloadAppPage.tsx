@@ -62,12 +62,12 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
         </div>
       </header>
 
-      {/* Main Download Card with Liquid Glass Theme */}
+      {/* Main Download Card with Warm Sand Theme */}
       <main className="max-w-xl mx-auto w-full space-y-6 my-auto py-4">
-        <div className="liquid-glass rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-center border border-white/80">
+        <div className="bg-[#FAF6EE] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-center border border-sand-300">
           {/* App Icon */}
-          <div className="relative mx-auto w-24 h-24 rounded-3xl bg-gradient-to-tr from-sand-900 to-sand-800 p-0.5 shadow-xl shadow-sand-900/20 ring-4 ring-sand-300/50">
-            <div className="w-full h-full rounded-[22px] bg-gradient-to-tr from-sand-900 via-sand-800 to-sand-950 flex items-center justify-center text-[#EBE2CC]">
+          <div className="relative mx-auto w-24 h-24 rounded-3xl bg-sand-900 p-0.5 shadow-xl shadow-sand-900/20 ring-4 ring-sand-300/50">
+            <div className="w-full h-full rounded-[22px] bg-sand-900 flex items-center justify-center text-[#EBE2CC]">
               <Smartphone className="w-12 h-12" />
             </div>
             <div className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-1.5 rounded-full shadow-md">
@@ -87,13 +87,13 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
 
           {/* Specs Badges with Warm Palette */}
           <div className="flex items-center justify-center gap-2 flex-wrap text-[11px] font-semibold text-sand-800">
-            <span className="px-2.5 py-1 bg-white/70 rounded-lg border border-sand-300 shadow-2xs">
+            <span className="px-2.5 py-1 bg-[#F5EFE3] rounded-lg border border-sand-300 shadow-2xs">
               Version 1.0.0
             </span>
-            <span className="px-2.5 py-1 bg-white/70 rounded-lg border border-sand-300 shadow-2xs">
+            <span className="px-2.5 py-1 bg-[#F5EFE3] rounded-lg border border-sand-300 shadow-2xs">
               Size: ~12 MB
             </span>
-            <span className="px-2.5 py-1 bg-white/70 rounded-lg border border-sand-300 shadow-2xs">
+            <span className="px-2.5 py-1 bg-[#F5EFE3] rounded-lg border border-sand-300 shadow-2xs">
               Android 8.0+
             </span>
             <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 flex items-center gap-1 font-bold">
@@ -107,7 +107,7 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
             <button
               onClick={handleDownload}
               disabled={downloading}
-              className="w-full py-4 px-6 bg-gradient-to-r from-sand-900 via-sand-800 to-sand-950 hover:from-sand-950 hover:to-sand-900 text-[#FDFBF7] rounded-2xl font-bold text-base shadow-xl shadow-sand-900/25 active:scale-98 transition-all flex items-center justify-center gap-3 cursor-pointer group border border-sand-700/50"
+              className="w-full py-4 px-6 bg-sand-900 hover:bg-sand-800 text-[#FAF6EE] rounded-2xl font-bold text-base shadow-xl shadow-sand-900/25 active:scale-98 transition-all flex items-center justify-center gap-3 cursor-pointer group border border-sand-950"
             >
               <Download className={`w-5 h-5 text-[#EBE2CC] transition-transform ${downloading ? 'animate-bounce' : 'group-hover:translate-y-0.5'}`} />
               <span>{downloading ? 'Starting Download...' : 'Download Android App (.apk)'}</span>
@@ -144,7 +144,7 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
 
         {/* Feature Highlights Grid */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-sand-300/70 space-y-1.5 text-left shadow-2xs">
+          <div className="p-4 rounded-2xl bg-[#FAF6EE] border border-sand-300 space-y-1.5 text-left shadow-2xs">
             <div className="w-8 h-8 rounded-xl bg-sand-200 text-sand-900 flex items-center justify-center border border-sand-300">
               <Zap className="w-4 h-4 text-amber-700" />
             </div>
@@ -154,7 +154,7 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-sand-300/70 space-y-1.5 text-left shadow-2xs">
+          <div className="p-4 rounded-2xl bg-[#FAF6EE] border border-sand-300 space-y-1.5 text-left shadow-2xs">
             <div className="w-8 h-8 rounded-xl bg-sand-200 text-sand-900 flex items-center justify-center border border-sand-300">
               <Clock className="w-4 h-4 text-brand-700" />
             </div>
@@ -164,7 +164,7 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-sand-300/70 space-y-1.5 text-left shadow-2xs">
+          <div className="p-4 rounded-2xl bg-[#FAF6EE] border border-sand-300 space-y-1.5 text-left shadow-2xs">
             <div className="w-8 h-8 rounded-xl bg-sand-200 text-sand-900 flex items-center justify-center border border-sand-300">
               <FileCheck className="w-4 h-4 text-emerald-700" />
             </div>
@@ -174,7 +174,7 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-md border border-sand-300/70 space-y-1.5 text-left shadow-2xs">
+          <div className="p-4 rounded-2xl bg-[#FAF6EE] border border-sand-300 space-y-1.5 text-left shadow-2xs">
             <div className="w-8 h-8 rounded-xl bg-sand-200 text-sand-900 flex items-center justify-center border border-sand-300">
               <HandCoins className="w-4 h-4 text-amber-800" />
             </div>
@@ -186,7 +186,7 @@ export const DownloadAppPage: React.FC<DownloadAppPageProps> = ({ onGoToWebApp }
         </div>
 
         {/* 3-Step Installation Guide */}
-        <div className="bg-white/60 backdrop-blur-md border border-sand-300/70 rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xs">
+        <div className="bg-[#FAF6EE] border border-sand-300 rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xs">
           <h3 className="text-xs font-bold uppercase tracking-wider text-sand-700 text-left">
             How to Install on Android
           </h3>

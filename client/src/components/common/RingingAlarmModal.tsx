@@ -114,22 +114,22 @@ export const RingingAlarmModal: React.FC = () => {
   const isShiftEnd = activeAlarm.type === 'shift_end';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border-2 border-rose-500 p-5 sm:p-6 text-center space-y-4 animate-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-sand-950/60 backdrop-blur-sm animate-in fade-in">
+      <div className="relative w-full max-w-md bg-[#FAF6EE] rounded-3xl shadow-2xl border-2 border-amber-600 p-5 sm:p-6 text-center space-y-4 animate-in zoom-in-95">
         {/* Animated Pulsing Alarm Bell */}
-        <div className="relative mx-auto w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shadow-lg shadow-rose-500/20">
-          <div className="absolute inset-0 rounded-full bg-rose-400 animate-ping opacity-40"></div>
+        <div className="relative mx-auto w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shadow-lg shadow-amber-600/20">
+          <div className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-40"></div>
           <Bell className="w-8 h-8 animate-bounce" />
         </div>
 
         <div>
-          <span className="text-[11px] font-black uppercase tracking-widest text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+          <span className="text-[11px] font-black uppercase tracking-widest text-amber-800 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-300">
             {isShiftEnd ? '⏰ SHIFT END (5:30 PM)' : '⏰ OVERTIME FINISHED!'}
           </span>
-          <h3 className="text-xl font-black text-slate-900 mt-2">
+          <h3 className="text-xl font-black text-sand-950 mt-2">
             {isShiftEnd ? 'Daily Shift Completed' : activeAlarm.employeeName}
           </h3>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="text-xs text-sand-700 mt-1">
             {isShiftEnd ? (
               <span>Regular shift has concluded. Please mark today&apos;s worker attendance.</span>
             ) : (

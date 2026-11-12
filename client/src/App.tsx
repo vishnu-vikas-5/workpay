@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   CreditCard,
   Zap,
@@ -95,12 +95,12 @@ export const App: React.FC = () => {
   // 1. Initial Authentication Loading State
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAF7F2] text-sand-950 flex items-center justify-center p-4">
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white mx-auto shadow-lg shadow-brand-500/20 animate-pulse">
+          <div className="w-12 h-12 rounded-2xl bg-sand-900 flex items-center justify-center text-[#EBE2CC] mx-auto shadow-lg shadow-sand-900/20 animate-pulse border border-sand-950">
             <CreditCard className="w-6 h-6" />
           </div>
-          <p className="text-xs font-bold text-slate-700">Connecting to WorkPay...</p>
+          <p className="text-xs font-bold text-sand-800">Connecting to WorkPay...</p>
         </div>
       </div>
     );
@@ -117,6 +117,44 @@ export const App: React.FC = () => {
     { label: 'Attendance & Pay', icon: <CalendarDays className="w-3.5 h-3.5" /> },
     { label: 'History', icon: <History className="w-3.5 h-3.5" /> },
   ];
+
+  const mobileNavItems: GooeyNavItem[] = [
+    { label: 'Pay', icon: <Zap className="w-4 h-4" /> },
+    { label: 'Attend', icon: <CalendarDays className="w-4 h-4" /> },
+    { label: 'History', icon: <History className="w-4 h-4" /> },
+    {
+      label: 'Alarm',
+      icon: (
+        <div className="relative inline-flex items-center justify-center">
+          <Bell className="w-4 h-4" />
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 ring-1 ring-white" />
+        </div>
+      ),
+    },
+    { label: 'Workers', icon: <Users className="w-4 h-4" /> },
+  ];
+
+  const mobileNavActiveIndex = useMemo(() => {
+    if (isOvertimeAlarmOpen) return 3;
+    if (isManageWorkersOpen) return 4;
+    if (activeTab === 'attendance') return 1;
+    if (activeTab === 'history') return 2;
+    return 0; // quickpay
+  }, [isOvertimeAlarmOpen, isManageWorkersOpen, activeTab]);
+
+  const handleMobileNavChange = (index: number) => {
+    if (index === 0) {
+      setActiveTab('quickpay');
+    } else if (index === 1) {
+      setActiveTab('attendance');
+    } else if (index === 2) {
+      setActiveTab('history');
+    } else if (index === 3) {
+      setIsOvertimeAlarmOpen(true);
+    } else if (index === 4) {
+      setIsManageWorkersOpen(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-sand-950 flex flex-col font-sans pb-32 sm:pb-8 selection:bg-sand-300 selection:text-sand-950 relative">
@@ -161,7 +199,7 @@ export const App: React.FC = () => {
               size="sm"
               color="#302C25"
               activeTextColor="#FFFFFF"
-              colors={['#EBE2CC', '#DED6C1', '#CFC6B1', '#6366f1']}
+              colors={['#EBE2CC', '#DED6C1', '#CFC6B1', '#B7B09E']}
               frame={true}
               particleCount={14}
               spread={48}
@@ -175,13 +213,13 @@ export const App: React.FC = () => {
 
           {/* Quick Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Shift & OT Alarm Button */}
+            {/* Shift & OT Alarm Button (Hidden on Mobile, Available in Mobile Bottom Dock) */}
             <button
               onClick={() => setIsOvertimeAlarmOpen(true)}
-              className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-300 transition-all flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
+              className="hidden sm:flex px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-sand-900 bg-sand-200/80 hover:bg-sand-300 rounded-xl border border-sand-300 transition-all items-center gap-1.5 shadow-2xs whitespace-nowrap"
               title="Set Daily Shift End Alarm or Overtime Alarm"
             >
-              <Bell className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
+              <Bell className="w-3.5 h-3.5 text-sand-700 animate-bounce" />
               <span>Alarm</span>
             </button>
 
@@ -223,7 +261,7 @@ export const App: React.FC = () => {
               </span>
               <button
                 onClick={logout}
-                className="p-1 sm:p-1.5 text-sand-600 hover:text-rose-600 hover:bg-white/80 rounded-lg transition-all flex items-center gap-1 shrink-0 border border-transparent hover:border-sand-300"
+                className="p-1 sm:p-1.5 text-sand-600 hover:text-rose-600 hover:bg-sand-300 rounded-lg transition-all flex items-center gap-1 shrink-0 border border-transparent hover:border-sand-300"
                 title="Sign Out of WorkPay"
                 aria-label="Sign Out"
               >
@@ -263,86 +301,38 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-4 sm:py-6 px-4 text-center text-xs text-slate-500 mt-auto hidden sm:block">
+      <footer className="bg-[#FAF6EE] border-t border-sand-300 py-4 sm:py-6 px-4 text-center text-xs text-sand-600 mt-auto hidden sm:block">
         <p className="font-medium">
-          <span className="font-bold text-slate-700">WorkPay</span> – Worker Shift, Overtime & UPI Payout Platform
+          <span className="font-bold text-sand-950">WorkPay</span> – Worker Shift, Overtime & UPI Payout Platform
         </p>
-        <p className="text-[11px] text-slate-400 mt-0.5">
+        <p className="text-[11px] text-sand-600 mt-0.5">
           Standard 8-hour shift • Overtime calculated at (Shift Rate ÷ 8) per hour • Direct UPI Redirection & QR Settlement
         </p>
       </footer>
 
-      {/* iOS 27 Liquid Glass Floating Mobile Dock */}
-      <div className="fixed bottom-3 inset-x-3 z-40 md:hidden pointer-events-none pb-safe">
-        <nav
-          className="pointer-events-auto max-w-sm mx-auto liquid-glass-dock rounded-[30px] p-1.5 flex items-center justify-between gap-1 relative overflow-hidden shadow-[0_20px_50px_rgba(48,44,37,0.22),0_2px_4px_rgba(0,0,0,0.06)]"
-          style={{
-            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 240, 230, 0.78) 50%, rgba(235, 226, 204, 0.70) 100%)',
-          }}
-        >
-          {/* Subtle liquid shimmer overlay */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent pointer-events-none" />
-
-          {/* Tab 1: Quick Pay */}
-          <button
-            onClick={() => setActiveTab('quickpay')}
-            className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 ${
-              activeTab === 'quickpay'
-                ? 'bg-gradient-to-tr from-sand-900 to-sand-800 text-sand-100 shadow-md shadow-sand-900/30 scale-102 font-bold'
-                : 'text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold'
-            }`}
-          >
-            <Zap className={`w-4 h-4 transition-transform ${activeTab === 'quickpay' ? 'scale-110 text-[#EBE2CC]' : ''}`} />
-            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">Pay</span>
-          </button>
-
-          {/* Tab 2: Attendance */}
-          <button
-            onClick={() => setActiveTab('attendance')}
-            className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 ${
-              activeTab === 'attendance'
-                ? 'bg-gradient-to-tr from-sand-900 to-sand-800 text-sand-100 shadow-md shadow-sand-900/30 scale-102 font-bold'
-                : 'text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold'
-            }`}
-          >
-            <CalendarDays className={`w-4 h-4 transition-transform ${activeTab === 'attendance' ? 'scale-110 text-[#EBE2CC]' : ''}`} />
-            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">Attend</span>
-          </button>
-
-          {/* Tab 3: History */}
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 ${
-              activeTab === 'history'
-                ? 'bg-gradient-to-tr from-sand-900 to-sand-800 text-sand-100 shadow-md shadow-sand-900/30 scale-102 font-bold'
-                : 'text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold'
-            }`}
-          >
-            <History className={`w-4 h-4 transition-transform ${activeTab === 'history' ? 'scale-110 text-[#EBE2CC]' : ''}`} />
-            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">History</span>
-          </button>
-
-          {/* Tab 4: Alarm (Shift & OT) */}
-          <button
-            onClick={() => setIsOvertimeAlarmOpen(true)}
-            className="relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 text-amber-900 hover:bg-amber-100/60 font-bold"
-          >
-            <div className="relative">
-              <Bell className="w-4 h-4 text-amber-600 animate-bounce" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white" />
-            </div>
-            <span className="text-[10px] mt-0.5 leading-tight tracking-tight text-amber-900">Alarm</span>
-          </button>
-
-          {/* Tab 5: Workers */}
-          <button
-            onClick={() => setIsManageWorkersOpen(true)}
-            className="relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold"
-          >
-            <Users className="w-4 h-4" />
-            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">Workers</span>
-          </button>
-        </nav>
+      {/* Liquid GooeyNav Floating Mobile Dock (Web & Android APK) */}
+      <div className="fixed bottom-3 inset-x-2 z-40 md:hidden flex justify-center pointer-events-none pb-safe">
+        <div className="pointer-events-auto w-full max-w-sm sm:max-w-md shadow-2xl rounded-full">
+          <GooeyNav
+            items={mobileNavItems}
+            activeIndex={mobileNavActiveIndex}
+            onChange={handleMobileNavChange}
+            theme="light"
+            size="mobile"
+            color="#302C25"
+            activeTextColor="#FAF6EE"
+            colors={['#EBE2CC', '#DED6C1', '#CFC6B1', '#B7B09E']}
+            frame={true}
+            particleCount={12}
+            spread={42}
+            animationTime={450}
+            timeVariance={200}
+            gooeyness={0.6}
+            wobble={0.4}
+            hoverEffect={true}
+            className="w-full"
+          />
+        </div>
       </div>
 
       {/* Floating Active Overtime Timer Pill */}
