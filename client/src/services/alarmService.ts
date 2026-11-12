@@ -15,6 +15,9 @@ export interface NativeAlarmPluginInterface {
     repeatsDaily?: boolean;
   }): Promise<void>;
   cancelAlarm(options: { id: string }): Promise<void>;
+  stopAlarm(): Promise<void>;
+  checkOverlayPermission(): Promise<{ canDrawOverlays: boolean }>;
+  requestOverlayPermission(): Promise<void>;
   getPendingAlarm(): Promise<{
     alarm?: {
       alarmId?: string;
@@ -27,7 +30,7 @@ export interface NativeAlarmPluginInterface {
     };
   }>;
   addListener(
-    eventName: 'alarmTriggered',
+    eventName: 'alarmTriggered' | 'alarmDismissed',
     listenerFunc: (data: any) => void
   ): Promise<any>;
 }
@@ -123,6 +126,14 @@ class AlarmService {
         try {
           NativeAlarm.addListener('alarmTriggered', (data) => {
             this.handleNativeAlarmTrigger(data);
+          });
+
+          NativeAlarm.addListener('alarmDismissed', () => {
+            this.stopAlarmSound();
+            const alarms = this.getActiveAlarms().map((a) =>
+              a.status === 'ringing' ? { ...a, status: 'completed' as const } : a
+            );
+            this.saveActiveAlarms(alarms);
           });
 
           // Check if app was directly launched / awakened by an Alarm Intent
@@ -332,6 +343,9 @@ class AlarmService {
         navigator.vibrate(0);
       } catch (e) {}
     }
+    if (Capacitor.isNativePlatform()) {
+      NativeAlarm.stopAlarm().catch(() => {});
+    }
   }
 
   // Test sound function (plays 2 pulses + vibration)
@@ -443,7 +457,7 @@ class AlarmService {
         target.setDate(target.getDate() + 1);
       }
 
-      // 1. High-priority Android AlarmManager with FullScreenIntent
+      // High-priority Android AlarmManager with AlarmRingtoneService & FullScreenIntent
       await NativeAlarm.scheduleAlarm({
         id: 'shift_end_daily',
         triggerTimeMs: target.getTime(),
@@ -453,27 +467,6 @@ class AlarmService {
         employeeName: 'All Workers',
         repeatsDaily: true,
       }).catch((e) => console.warn('NativeAlarm scheduleDaily error:', e));
-
-      // 2. LocalNotification fallback
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: SHIFT_END_NOTIF_ID,
-            title: `⏰ Daily Shift End Alarm (${settings.shiftEndTime})`,
-            body: "Work shift ended! Time to mark today's worker attendance or add overtime.",
-            schedule: {
-              at: target,
-              allowWhileIdle: true, // EXACT Android AlarmManager trigger even in Doze mode
-              repeats: true,
-              every: 'day', // Repeats automatically every day at specified time
-            },
-            channelId: ALARM_CHANNEL_ID,
-            extra: {
-              type: 'shift_end',
-            },
-          },
-        ],
-      });
     } catch (e) {
       console.warn('Error scheduling daily shift native alarm:', e);
     }
@@ -512,7 +505,7 @@ class AlarmService {
         ? "Work shift ended! Time to mark today's worker attendance or add overtime."
         : `${alarm.employeeName} completed ${alarm.overtimeHours}h overtime! Tap to mark attendance & record OT.`;
 
-      // 1. High-priority Android AlarmManager with FullScreenIntent
+      // High-priority Android AlarmManager with AlarmRingtoneService & FullScreenIntent
       await NativeAlarm.scheduleAlarm({
         id: alarm.id,
         triggerTimeMs: alarm.targetEndTime,
@@ -524,31 +517,28 @@ class AlarmService {
         overtimeHours: alarm.overtimeHours,
         repeatsDaily: false,
       }).catch((e) => console.warn('NativeAlarm schedule error:', e));
-
-      // 2. LocalNotification fallback
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: notifId,
-            title,
-            body,
-            schedule: {
-              at: new Date(alarm.targetEndTime),
-              allowWhileIdle: true, // Exact AlarmManager trigger outside of app
-            },
-            channelId: ALARM_CHANNEL_ID,
-            extra: {
-              alarmId: alarm.id,
-              type: alarm.type,
-              employeeId: alarm.employeeId,
-              employeeName: alarm.employeeName,
-            },
-          },
-        ],
-      });
     } catch (e) {
       console.warn('Error scheduling native overtime alarm:', e);
     }
+  }
+
+  // Check if app has "Display over other apps" (Appear on top) permission on Android
+  public async checkOverlayPermission(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return true;
+    try {
+      const res = await NativeAlarm.checkOverlayPermission();
+      return Boolean(res?.canDrawOverlays);
+    } catch (e) {
+      return true;
+    }
+  }
+
+  // Request "Display over other apps" (Appear on top) setting on Android
+  public async requestOverlayPermission(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      await NativeAlarm.requestOverlayPermission();
+    } catch (e) {}
   }
 
   /**

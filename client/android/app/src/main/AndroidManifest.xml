@@ -33,11 +33,19 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="io.workpay.app.ALARM_TRIGGER" />
+                <action android:name="io.workpay.app.STOP_ALARM" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
+
+        <!-- Foreground Service for continuous loud alarm ringtone & vibration in background -->
+        <service
+            android:name=".AlarmRingtoneService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -62,6 +70,7 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <!-- Package Visibility Queries for UPI Apps on Android 11+ -->
     <queries>

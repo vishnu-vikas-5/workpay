@@ -5,7 +5,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -46,6 +48,12 @@ public class NativeAlarmPlugin extends Plugin {
         }
     }
 
+    public static void notifyAlarmDismissed() {
+        if (instance != null) {
+            instance.notifyListeners("alarmDismissed", new JSObject(), true);
+        }
+    }
+
     @PluginMethod
     public void getPendingAlarm(PluginCall call) {
         if (pendingAlarm != null) {
@@ -56,6 +64,42 @@ public class NativeAlarmPlugin extends Plugin {
         } else {
             call.resolve(new JSObject());
         }
+    }
+
+    @PluginMethod
+    public void stopAlarm(PluginCall call) {
+        AlarmRingtoneService.stopAlarm(getContext());
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void checkOverlayPermission(PluginCall call) {
+        boolean canDraw = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            canDraw = Settings.canDrawOverlays(getContext());
+        }
+        JSObject res = new JSObject();
+        res.put("canDrawOverlays", canDraw);
+        call.resolve(res);
+    }
+
+    @PluginMethod
+    public void requestOverlayPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                Intent intent = new Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getContext().getPackageName())
+                );
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(intent);
+            } catch (Exception e) {
+                Intent fallback = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(fallback);
+            }
+        }
+        call.resolve();
     }
 
     @PluginMethod
@@ -101,6 +145,7 @@ public class NativeAlarmPlugin extends Plugin {
         }
 
         cancelAlarmExact(getContext(), id);
+        AlarmRingtoneService.stopAlarm(getContext());
         call.resolve();
     }
 
@@ -140,6 +185,8 @@ public class NativeAlarmPlugin extends Plugin {
             );
 
             Intent showIntent = new Intent(context, MainActivity.class);
+            showIntent.setAction(Intent.ACTION_MAIN);
+            showIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             PendingIntent showPendingIntent = PendingIntent.getActivity(
                 context,
                 requestCode,

@@ -41,6 +41,7 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
   const [alarms, setAlarms] = useState<ActiveAlarm[]>([]);
   const [now, setNow] = useState<number>(Date.now());
   const [toastNotice, setToastNotice] = useState<string | null>(null);
+  const [hasOverlayPermission, setHasOverlayPermission] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (defaultEmployeeId) {
@@ -54,6 +55,7 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
     if (!isOpen) return;
     setAlarms(alarmService.getActiveAlarms());
     setShiftSettings(alarmService.getShiftAlarmSettings());
+    alarmService.checkOverlayPermission().then(setHasOverlayPermission).catch(() => {});
 
     const interval = setInterval(() => {
       setNow(Date.now());
@@ -182,6 +184,34 @@ export const OvertimeAlarmModal: React.FC<OvertimeAlarmModalProps> = ({
             <span>Test Sound</span>
           </button>
         </div>
+
+        {/* Auto-Open App on Alarm Permission Banner */}
+        {hasOverlayPermission === false && (
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs">
+            <div className="flex items-start gap-2 text-amber-900 pr-2">
+              <Sparkles className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-bold text-[11px]">Auto-Open App on Alarm</p>
+                <p className="text-[10px] text-amber-800">
+                  Allow &ldquo;Appear on top&rdquo; so WorkPay automatically pops open when alarms ring.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await alarmService.requestOverlayPermission();
+                setTimeout(async () => {
+                  const allowed = await alarmService.checkOverlayPermission();
+                  setHasOverlayPermission(allowed);
+                }, 1500);
+              }}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-[11px] whitespace-nowrap shadow-xs"
+            >
+              Enable
+            </button>
+          </div>
+        )}
 
         {toastNotice && (
           <div className="p-2.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs flex items-center gap-2 animate-in fade-in">
