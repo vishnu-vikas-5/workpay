@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   CreditCard,
   Zap,
-  UserPlus,
   History,
   Users,
   CalendarDays,
@@ -176,11 +175,11 @@ export const App: React.FC = () => {
           </div>
 
           {/* Quick Header Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Shift & OT Alarm Button */}
             <button
               onClick={() => setIsOvertimeAlarmOpen(true)}
-              className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-300 transition-all flex items-center gap-1 sm:gap-1.5 shadow-2xs whitespace-nowrap"
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-300 transition-all flex items-center gap-1.5 shadow-2xs whitespace-nowrap"
               title="Set Daily Shift End Alarm or Overtime Alarm"
             >
               <Bell className="w-3.5 h-3.5 text-amber-600 animate-bounce" />
@@ -191,7 +190,7 @@ export const App: React.FC = () => {
             <button
               onClick={handleManualSync}
               disabled={isSyncing}
-              className={`px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1 sm:gap-1.5 whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 isSyncing
                   ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
                   : syncNotice
@@ -201,53 +200,36 @@ export const App: React.FC = () => {
               title="Sync phone and laptop records via cloud"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-600' : syncNotice ? 'text-emerald-600' : 'text-slate-500'}`} />
-              <span className="hidden xl:inline">{syncNotice || (isSyncing ? 'Syncing...' : 'Sync Cloud')}</span>
+              <span className="hidden sm:inline">{syncNotice || (isSyncing ? 'Syncing...' : 'Sync Cloud')}</span>
             </button>
 
-            {/* Workers Directory Button */}
-            <button
-              onClick={() => setIsManageWorkersOpen(true)}
-              className="hidden lg:flex px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200/80 transition-colors items-center gap-1 sm:gap-1.5 whitespace-nowrap"
-              title="Manage Workers"
-            >
-              <Users className="w-3.5 h-3.5 text-slate-500" />
-              <span>Workers</span>
-            </button>
-
-            {/* Add Worker Action */}
-            <button
-              onClick={() => {
-                setEmployeeToEdit(null);
-                setIsAddEmployeeOpen(true);
-              }}
-              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-1 sm:gap-1.5 transition-all shrink-0 whitespace-nowrap"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>+ Add Worker</span>
-            </button>
-
-            {/* Logged In User Profile & Sign Out */}
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0">
+            {/* Logged In User Profile & Sign Out Button */}
+            <div className="flex items-center gap-1.5 sm:gap-2 pl-2 pr-1.5 py-1 sm:py-1.5 bg-slate-100/90 hover:bg-slate-100 rounded-xl border border-slate-200/90 shrink-0 shadow-2xs">
               {firebaseUser?.photoURL ? (
                 <img
                   src={firebaseUser.photoURL}
                   alt="avatar"
-                  className="w-5 h-5 rounded-full border border-slate-300 shrink-0"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-slate-300 shrink-0"
                 />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-brand-600 text-white text-[10px] sm:text-xs font-bold flex items-center justify-center shrink-0">
                   {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
-              <span className="text-xs font-bold text-slate-800 hidden xl:inline max-w-[90px] truncate">
+              <span
+                className="text-xs font-bold text-slate-800 max-w-[85px] sm:max-w-[120px] truncate"
+                title={user?.name || user?.email || 'Logged In User'}
+              >
                 {user?.name || user?.email?.split('@')[0] || 'Account'}
               </span>
               <button
                 onClick={logout}
-                className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors ml-0.5"
-                title="Sign Out"
+                className="p-1 sm:p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-all flex items-center gap-1 shrink-0 border border-transparent hover:border-slate-200"
+                title="Sign Out of WorkPay"
+                aria-label="Sign Out"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="text-[10px] font-bold hidden md:inline">Sign Out</span>
               </button>
             </div>
           </div>
