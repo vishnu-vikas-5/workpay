@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' rx='12' fill='%234f46e5'/><rect x='8' y='12' width='32' height='24' rx='4' fill='white'/><rect x='8' y='18' width='32' height='5' fill='%23312e81'/><rect x='12' y='26' width='6' height='5' rx='1' fill='%23f59e0b'/><circle cx='34' cy='28' r='7' fill='%2310b981'/><path d='M35 24l-3 5h2.5l-1.5 4 4.5-5.5h-2.5z' fill='white'/></svg>" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' rx='12' fill='%23302C25'/><rect x='8' y='12' width='32' height='24' rx='4' fill='%23EBE2CC'/><rect x='8' y='18' width='32' height='5' fill='%23302C25'/><rect x='12' y='26' width='6' height='5' rx='1' fill='%23f59e0b'/><circle cx='34' cy='28' r='7' fill='%2310b981'/><path d='M35 24l-3 5h2.5l-1.5 4 4.5-5.5h-2.5z' fill='white'/></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#EBE2CC" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -12,9 +15,74 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      html, body {
+        background-color: #EBE2CC !important;
+        color: #302C25;
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: #EBE2CC;
+      }
+      .initial-splash {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: #EBE2CC;
+        color: #302C25;
+        gap: 16px;
+      }
+      .initial-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 20px;
+        background: #302C25;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 25px -5px rgba(48, 44, 37, 0.25);
+      }
+      .initial-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke: #EBE2CC;
+        fill: none;
+        stroke-width: 2;
+      }
+      .initial-spin {
+        width: 24px;
+        height: 24px;
+        border: 2.5px solid #CFC6B1;
+        border-top-color: #302C25;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
-  <body class="bg-[#EBE2CC] text-[#302C25] font-sans antialiased">
-    <div id="root"></div>
+  <body style="background-color: #EBE2CC; color: #302C25; margin: 0; min-height: 100vh;" class="bg-[#EBE2CC] text-[#302C25] font-sans antialiased">
+    <div id="root">
+      <div class="initial-splash">
+        <div class="initial-icon">
+          <svg viewBox="0 0 24 24">
+            <rect width="20" height="14" x="2" y="5" rx="2"/>
+            <line x1="2" x2="22" y1="10" y2="10"/>
+          </svg>
+        </div>
+        <div class="initial-spin"></div>
+        <div style="font-size: 13px; font-weight: 700; color: #302C25; letter-spacing: -0.2px;">WorkPay</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -53,6 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null;
   });
 
+  // Safety fallback: Never leave authLoading hanging for more than 2 seconds (e.g. Brave Shields / offline)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Check redirect result on load for mobile Google sign-in
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {

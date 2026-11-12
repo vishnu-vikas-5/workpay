@@ -727,8 +727,8 @@ export const storageService = {
     const cleanAdvs = deduplicateAdvances(rawAdvs);
     setLocal(KEYS.ADVANCES, cleanAdvs);
 
-    // 6. Delete dummy documents from Firestore in background
-    if (isFirebaseConfigured) {
+    // 6. Delete dummy documents from Firestore in background (only when authenticated)
+    if (isFirebaseConfigured && auth?.currentUser) {
       (async () => {
         try {
           const batch = writeBatch(db);
