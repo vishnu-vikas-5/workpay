@@ -20,6 +20,19 @@ export default {
           900: '#312e81',
           950: '#1e1b4b',
         },
+        sand: {
+          50: '#FDFBF7',
+          100: '#FAF6EE',
+          200: '#EBE2CC', // Primary Warm Cream
+          300: '#DED6C1', // Soft Beige
+          400: '#CFC6B1', // Warm Muted Sand
+          500: '#B7B09E', // Deep Taupe
+          600: '#968E7C',
+          700: '#736B5C',
+          800: '#4F4A3E',
+          900: '#302C25',
+          950: '#1B1915',
+        },
         success: {
           50: '#f0fdf4',
           100: '#dcfce7',

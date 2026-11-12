@@ -10,7 +10,9 @@ import {
   RefreshCw,
   Bell,
   Clock,
+  Sparkles,
 } from 'lucide-react';
+import { GooeyNav, GooeyNavItem } from './components/common/GooeyNav';
 import { QuickPayConsole } from './components/common/QuickPayConsole';
 import { AttendanceSection } from './components/common/AttendanceSection';
 import { PaymentHistorySection } from './components/common/PaymentHistorySection';
@@ -110,68 +112,65 @@ export const App: React.FC = () => {
   }
 
   // 3. Authenticated: Render Main App Dashboard
+  const navItems: GooeyNavItem[] = [
+    { label: 'Quick Pay', icon: <Zap className="w-3.5 h-3.5" /> },
+    { label: 'Attendance & Pay', icon: <CalendarDays className="w-3.5 h-3.5" /> },
+    { label: 'History', icon: <History className="w-3.5 h-3.5" /> },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans pb-32 sm:pb-8">
+    <div className="min-h-screen bg-[#FAF7F2] text-sand-950 flex flex-col font-sans pb-32 sm:pb-8 selection:bg-sand-300 selection:text-sand-950 relative">
+      {/* Warm Ambient Background Gradients */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sand-200/50 via-transparent to-transparent -z-10" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_85%_80%,_var(--tw-gradient-stops))] from-sand-300/35 via-transparent to-transparent -z-10" />
+
       {/* Sleek Mobile-Optimized Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs px-3 sm:px-6 py-2.5 sm:py-3 pt-safe">
+      <header className="sticky top-0 z-40 bg-[#FAF7F2]/90 backdrop-blur-xl border-b border-sand-300/80 shadow-xs px-3 sm:px-6 py-2 sm:py-2.5 pt-safe">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo & Tagline */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 shrink-0">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-sand-900 to-sand-800 flex items-center justify-center text-sand-200 shadow-md shadow-sand-900/20 shrink-0 border border-sand-700/30">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[#EBE2CC]" />
             </div>
             <div className="shrink-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-extrabold text-base sm:text-xl text-slate-900 tracking-tight whitespace-nowrap">
+                <span className="font-extrabold text-base sm:text-xl text-sand-950 tracking-tight whitespace-nowrap">
                   WorkPay
                 </span>
-                <span className="hidden sm:inline-block text-[10px] font-bold bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full border border-brand-200 whitespace-nowrap">
+                <span className="hidden sm:inline-block text-[10px] font-bold bg-sand-200 text-sand-800 px-2 py-0.5 rounded-full border border-sand-300 whitespace-nowrap">
                   PAYROLL PRO
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden xl:block whitespace-nowrap">
+              <p className="text-[11px] text-sand-600 hidden xl:block whitespace-nowrap">
                 Manage Shifts • Track Overtime • Pay Smarter
               </p>
             </div>
           </div>
 
-          {/* Desktop Top Tabs */}
-          <div className="hidden md:flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold shrink-0">
-            <button
-              onClick={() => setActiveTab('quickpay')}
-              className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'quickpay'
-                  ? 'bg-white text-brand-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Quick Pay</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('attendance')}
-              className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'attendance'
-                  ? 'bg-white text-brand-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <CalendarDays className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Attendance & Weekly Pay</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'history'
-                  ? 'bg-white text-brand-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <History className="w-3.5 h-3.5" />
-              <span>History</span>
-            </button>
+          {/* Desktop GooeyNav Tabs from React Bits */}
+          <div className="hidden md:flex items-center shrink-0">
+            <GooeyNav
+              items={navItems}
+              activeIndex={activeTab === 'quickpay' ? 0 : activeTab === 'attendance' ? 1 : 2}
+              onChange={(index) => {
+                if (index === 0) setActiveTab('quickpay');
+                else if (index === 1) setActiveTab('attendance');
+                else if (index === 2) setActiveTab('history');
+              }}
+              theme="light"
+              size="sm"
+              color="#302C25"
+              activeTextColor="#FFFFFF"
+              colors={['#EBE2CC', '#DED6C1', '#CFC6B1', '#6366f1']}
+              frame={true}
+              particleCount={14}
+              spread={48}
+              animationTime={500}
+              timeVariance={250}
+              gooeyness={0.5}
+              wobble={0.4}
+              hoverEffect={true}
+            />
           </div>
 
           {/* Quick Header Actions */}
@@ -195,36 +194,36 @@ export const App: React.FC = () => {
                   ? 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
                   : syncNotice
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80'
+                  : 'text-sand-800 hover:text-sand-950 bg-sand-200/70 hover:bg-sand-200 border border-sand-300'
               }`}
               title="Sync phone and laptop records via cloud"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-600' : syncNotice ? 'text-emerald-600' : 'text-slate-500'}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-600' : syncNotice ? 'text-emerald-600' : 'text-sand-600'}`} />
               <span className="hidden sm:inline">{syncNotice || (isSyncing ? 'Syncing...' : 'Sync Cloud')}</span>
             </button>
 
             {/* Logged In User Profile & Sign Out Button */}
-            <div className="flex items-center gap-1.5 sm:gap-2 pl-2 pr-1.5 py-1 sm:py-1.5 bg-slate-100/90 hover:bg-slate-100 rounded-xl border border-slate-200/90 shrink-0 shadow-2xs">
+            <div className="flex items-center gap-1.5 sm:gap-2 pl-2 pr-1.5 py-1 sm:py-1.5 bg-sand-200/60 hover:bg-sand-200/90 rounded-xl border border-sand-300 shrink-0 shadow-2xs transition-colors">
               {firebaseUser?.photoURL ? (
                 <img
                   src={firebaseUser.photoURL}
                   alt="avatar"
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-slate-300 shrink-0"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-sand-400 shrink-0"
                 />
               ) : (
-                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-brand-600 text-white text-[10px] sm:text-xs font-bold flex items-center justify-center shrink-0">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-sand-900 text-[#EBE2CC] text-[10px] sm:text-xs font-bold flex items-center justify-center shrink-0">
                   {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
               <span
-                className="text-xs font-bold text-slate-800 max-w-[85px] sm:max-w-[120px] truncate"
+                className="text-xs font-bold text-sand-900 max-w-[85px] sm:max-w-[120px] truncate"
                 title={user?.name || user?.email || 'Logged In User'}
               >
                 {user?.name || user?.email?.split('@')[0] || 'Account'}
               </span>
               <button
                 onClick={logout}
-                className="p-1 sm:p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-all flex items-center gap-1 shrink-0 border border-transparent hover:border-slate-200"
+                className="p-1 sm:p-1.5 text-sand-600 hover:text-rose-600 hover:bg-white/80 rounded-lg transition-all flex items-center gap-1 shrink-0 border border-transparent hover:border-sand-300"
                 title="Sign Out of WorkPay"
                 aria-label="Sign Out"
               >
@@ -273,54 +272,78 @@ export const App: React.FC = () => {
         </p>
       </footer>
 
-      {/* Fixed Native-Style Bottom Navigation for Mobile Devices */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-1 px-1 grid grid-cols-5 md:hidden pb-safe shadow-lg">
-        <button
-          onClick={() => setActiveTab('quickpay')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl transition-colors ${
-            activeTab === 'quickpay' ? 'text-brand-600 font-bold' : 'text-slate-400 font-medium'
-          }`}
+      {/* iOS 27 Liquid Glass Floating Mobile Dock */}
+      <div className="fixed bottom-3 inset-x-3 z-40 md:hidden pointer-events-none pb-safe">
+        <nav
+          className="pointer-events-auto max-w-sm mx-auto liquid-glass-dock rounded-[30px] p-1.5 flex items-center justify-between gap-1 relative overflow-hidden shadow-[0_20px_50px_rgba(48,44,37,0.22),0_2px_4px_rgba(0,0,0,0.06)]"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 240, 230, 0.78) 50%, rgba(235, 226, 204, 0.70) 100%)',
+          }}
         >
-          <Zap className="w-4 h-4" />
-          <span className="text-[10px] leading-tight">Quick Pay</span>
-        </button>
+          {/* Subtle liquid shimmer overlay */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent pointer-events-none" />
 
-        <button
-          onClick={() => setActiveTab('attendance')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl transition-colors ${
-            activeTab === 'attendance' ? 'text-brand-600 font-bold' : 'text-slate-400 font-medium'
-          }`}
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span className="text-[10px] leading-tight">Attendance</span>
-        </button>
+          {/* Tab 1: Quick Pay */}
+          <button
+            onClick={() => setActiveTab('quickpay')}
+            className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 ${
+              activeTab === 'quickpay'
+                ? 'bg-gradient-to-tr from-sand-900 to-sand-800 text-sand-100 shadow-md shadow-sand-900/30 scale-102 font-bold'
+                : 'text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold'
+            }`}
+          >
+            <Zap className={`w-4 h-4 transition-transform ${activeTab === 'quickpay' ? 'scale-110 text-[#EBE2CC]' : ''}`} />
+            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">Pay</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl transition-colors ${
-            activeTab === 'history' ? 'text-brand-600 font-bold' : 'text-slate-400 font-medium'
-          }`}
-        >
-          <History className="w-4 h-4" />
-          <span className="text-[10px] leading-tight">History</span>
-        </button>
+          {/* Tab 2: Attendance */}
+          <button
+            onClick={() => setActiveTab('attendance')}
+            className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 ${
+              activeTab === 'attendance'
+                ? 'bg-gradient-to-tr from-sand-900 to-sand-800 text-sand-100 shadow-md shadow-sand-900/30 scale-102 font-bold'
+                : 'text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold'
+            }`}
+          >
+            <CalendarDays className={`w-4 h-4 transition-transform ${activeTab === 'attendance' ? 'scale-110 text-[#EBE2CC]' : ''}`} />
+            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">Attend</span>
+          </button>
 
-        <button
-          onClick={() => setIsOvertimeAlarmOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl text-amber-600 hover:text-amber-700 font-bold"
-        >
-          <Bell className="w-4 h-4 animate-bounce" />
-          <span className="text-[10px] leading-tight">Alarm</span>
-        </button>
+          {/* Tab 3: History */}
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 ${
+              activeTab === 'history'
+                ? 'bg-gradient-to-tr from-sand-900 to-sand-800 text-sand-100 shadow-md shadow-sand-900/30 scale-102 font-bold'
+                : 'text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold'
+            }`}
+          >
+            <History className={`w-4 h-4 transition-transform ${activeTab === 'history' ? 'scale-110 text-[#EBE2CC]' : ''}`} />
+            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">History</span>
+          </button>
 
-        <button
-          onClick={() => setIsManageWorkersOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 py-1 px-1 rounded-xl text-slate-400 hover:text-slate-700 font-medium"
-        >
-          <Users className="w-4 h-4" />
-          <span className="text-[10px] leading-tight">Workers</span>
-        </button>
-      </nav>
+          {/* Tab 4: Alarm (Shift & OT) */}
+          <button
+            onClick={() => setIsOvertimeAlarmOpen(true)}
+            className="relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 text-amber-900 hover:bg-amber-100/60 font-bold"
+          >
+            <div className="relative">
+              <Bell className="w-4 h-4 text-amber-600 animate-bounce" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white" />
+            </div>
+            <span className="text-[10px] mt-0.5 leading-tight tracking-tight text-amber-900">Alarm</span>
+          </button>
+
+          {/* Tab 5: Workers */}
+          <button
+            onClick={() => setIsManageWorkersOpen(true)}
+            className="relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 text-sand-700 hover:text-sand-950 hover:bg-white/40 font-semibold"
+          >
+            <Users className="w-4 h-4" />
+            <span className="text-[10px] mt-0.5 leading-tight tracking-tight">Workers</span>
+          </button>
+        </nav>
+      </div>
 
       {/* Floating Active Overtime Timer Pill */}
       <ActiveAlarmPill onOpenModal={() => setIsOvertimeAlarmOpen(true)} />

@@ -253,7 +253,7 @@ export const AttendanceSection: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-3.5 sm:p-6 space-y-4 sm:space-y-5">
+    <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-sand-300/80 shadow-[0_10px_30px_rgba(183,176,158,0.25)] p-3.5 sm:p-6 space-y-4 sm:space-y-5">
       {/* Top Banner & Week Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-slate-100">
         <div>

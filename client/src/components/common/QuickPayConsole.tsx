@@ -147,9 +147,9 @@ export const QuickPayConsole: React.FC<{ onEmployeeAdded?: (emp: Employee) => vo
   };
 
   return (
-    <div className="bg-gradient-to-br from-white via-indigo-50/20 to-white rounded-3xl border border-indigo-100/90 shadow-card p-3.5 sm:p-6 relative overflow-hidden">
+    <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-sand-300/80 shadow-[0_10px_30px_rgba(183,176,158,0.25)] p-3.5 sm:p-6 relative overflow-hidden">
       {/* Background ambient badge */}
-      <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute right-0 top-0 w-80 h-80 bg-sand-300/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-3 sm:pb-5 border-b border-slate-100">
