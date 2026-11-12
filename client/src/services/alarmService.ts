@@ -1,6 +1,38 @@
 // Web Audio API Synthesizer and Native Local Alarms for WorkPay
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+
+export interface NativeAlarmPluginInterface {
+  scheduleAlarm(options: {
+    id: string;
+    triggerTimeMs: number;
+    title: string;
+    body: string;
+    type: string;
+    employeeId?: string;
+    employeeName?: string;
+    overtimeHours?: number;
+    repeatsDaily?: boolean;
+  }): Promise<void>;
+  cancelAlarm(options: { id: string }): Promise<void>;
+  getPendingAlarm(): Promise<{
+    alarm?: {
+      alarmId?: string;
+      title?: string;
+      body?: string;
+      type?: string;
+      employeeId?: string;
+      employeeName?: string;
+      overtimeHours?: number;
+    };
+  }>;
+  addListener(
+    eventName: 'alarmTriggered',
+    listenerFunc: (data: any) => void
+  ): Promise<any>;
+}
+
+export const NativeAlarm = registerPlugin<NativeAlarmPluginInterface>('NativeAlarm');
 
 export type AlarmType = 'shift_end' | 'overtime';
 
@@ -84,32 +116,45 @@ class AlarmService {
         // Handle user tapping the notification outside the app
         LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
           const extra = action.notification.extra;
-          if (extra?.alarmId) {
-            const alarms = this.getActiveAlarms();
-            const matching = alarms.find((a) => a.id === extra.alarmId);
-            if (matching) {
-              matching.status = 'ringing';
-              this.startAlarmSound();
-              this.onAlarmTriggerCallback?.(matching);
-            }
-          } else if (extra?.type === 'shift_end') {
-            const shiftEndAlarm: ActiveAlarm = {
-              id: `shift-end-${Date.now()}`,
-              type: 'shift_end',
-              employeeName: 'All Workers',
-              durationMinutes: 480,
-              overtimeHours: 0,
-              scheduledTimeStr: '17:30',
-              startTime: Date.now(),
-              targetEndTime: Date.now(),
-              status: 'ringing',
-              note: 'Daily Shift End: Mark Attendance or Add Overtime',
-              createdAt: new Date().toISOString(),
-            };
-            this.startAlarmSound();
-            this.onAlarmTriggerCallback?.(shiftEndAlarm);
-          }
+          this.handleNativeAlarmTrigger(extra);
         });
+
+        // Listen for Native Alarm Intent triggered while app is foregrounded or waking
+        try {
+          NativeAlarm.addListener('alarmTriggered', (data) => {
+            this.handleNativeAlarmTrigger(data);
+          });
+
+          // Check if app was directly launched / awakened by an Alarm Intent
+          NativeAlarm.getPendingAlarm().then((res) => {
+            if (res && res.alarm) {
+              this.handleNativeAlarmTrigger(res.alarm);
+            }
+          }).catch(() => {});
+
+          // Re-check pending alarm on resume / screen unlock / focus
+          if (typeof window !== 'undefined') {
+            window.addEventListener('focus', () => {
+              NativeAlarm.getPendingAlarm().then((res) => {
+                if (res && res.alarm) {
+                  this.handleNativeAlarmTrigger(res.alarm);
+                }
+              }).catch(() => {});
+            });
+
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') {
+                NativeAlarm.getPendingAlarm().then((res) => {
+                  if (res && res.alarm) {
+                    this.handleNativeAlarmTrigger(res.alarm);
+                  }
+                }).catch(() => {});
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('NativeAlarm listener registration notice:', e);
+        }
 
         this.isNativeReady = true;
 
@@ -121,6 +166,61 @@ class AlarmService {
       }
     } catch (e) {
       console.warn('Native notification initialization notice:', e);
+    }
+  }
+
+  // Handle alarm payload from Native AlarmManager or FullScreenIntent
+  public handleNativeAlarmTrigger(data: any) {
+    if (!data) return;
+    const alarmId = data.alarmId;
+    const type: AlarmType = data.type === 'shift_end' ? 'shift_end' : 'overtime';
+    const alarms = this.getActiveAlarms();
+    let targetAlarm: ActiveAlarm | undefined;
+
+    if (alarmId) {
+      targetAlarm = alarms.find((a) => a.id === alarmId);
+    }
+
+    if (!targetAlarm) {
+      if (type === 'shift_end') {
+        targetAlarm = {
+          id: alarmId || `shift-end-${Date.now()}`,
+          type: 'shift_end',
+          employeeName: data.employeeName || 'All Workers',
+          durationMinutes: 480,
+          overtimeHours: 0,
+          scheduledTimeStr: '17:30',
+          startTime: Date.now(),
+          targetEndTime: Date.now(),
+          status: 'ringing',
+          note: 'Daily Shift End: Mark Attendance or Add Overtime',
+          createdAt: new Date().toISOString(),
+        };
+        alarms.push(targetAlarm);
+      } else {
+        const ot = typeof data.overtimeHours === 'number' ? data.overtimeHours : 1.0;
+        targetAlarm = {
+          id: alarmId || `ot-alarm-${Date.now()}`,
+          type: 'overtime',
+          employeeId: data.employeeId,
+          employeeName: data.employeeName || 'Worker',
+          durationMinutes: Math.round(ot * 60),
+          overtimeHours: ot,
+          startTime: Date.now(),
+          targetEndTime: Date.now(),
+          status: 'ringing',
+          createdAt: new Date().toISOString(),
+        };
+        alarms.push(targetAlarm);
+      }
+    } else {
+      targetAlarm.status = 'ringing';
+    }
+
+    this.saveActiveAlarms(alarms);
+    this.startAlarmSound();
+    if (this.onAlarmTriggerCallback && targetAlarm) {
+      this.onAlarmTriggerCallback(targetAlarm);
     }
   }
 
@@ -330,6 +430,7 @@ class AlarmService {
     try {
       if (!settings.enabled || !settings.shiftEndTime) {
         await LocalNotifications.cancel({ notifications: [{ id: SHIFT_END_NOTIF_ID }] }).catch(() => {});
+        await NativeAlarm.cancelAlarm({ id: 'shift_end_daily' }).catch(() => {});
         return;
       }
 
@@ -342,6 +443,18 @@ class AlarmService {
         target.setDate(target.getDate() + 1);
       }
 
+      // 1. High-priority Android AlarmManager with FullScreenIntent
+      await NativeAlarm.scheduleAlarm({
+        id: 'shift_end_daily',
+        triggerTimeMs: target.getTime(),
+        title: `⏰ Daily Shift End Alarm (${settings.shiftEndTime})`,
+        body: "Work shift ended! Time to mark today's worker attendance or add overtime.",
+        type: 'shift_end',
+        employeeName: 'All Workers',
+        repeatsDaily: true,
+      }).catch((e) => console.warn('NativeAlarm scheduleDaily error:', e));
+
+      // 2. LocalNotification fallback
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -399,6 +512,20 @@ class AlarmService {
         ? "Work shift ended! Time to mark today's worker attendance or add overtime."
         : `${alarm.employeeName} completed ${alarm.overtimeHours}h overtime! Tap to mark attendance & record OT.`;
 
+      // 1. High-priority Android AlarmManager with FullScreenIntent
+      await NativeAlarm.scheduleAlarm({
+        id: alarm.id,
+        triggerTimeMs: alarm.targetEndTime,
+        title,
+        body,
+        type: alarm.type,
+        employeeId: alarm.employeeId,
+        employeeName: alarm.employeeName,
+        overtimeHours: alarm.overtimeHours,
+        repeatsDaily: false,
+      }).catch((e) => console.warn('NativeAlarm schedule error:', e));
+
+      // 2. LocalNotification fallback
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -513,6 +640,7 @@ class AlarmService {
     if (Capacitor.isNativePlatform()) {
       const notifId = this.hashString(alarmId);
       LocalNotifications.cancel({ notifications: [{ id: notifId }] }).catch(() => {});
+      NativeAlarm.cancelAlarm({ id: alarmId }).catch(() => {});
     }
   }
 
@@ -527,6 +655,7 @@ class AlarmService {
     if (Capacitor.isNativePlatform()) {
       const notifId = this.hashString(alarmId);
       LocalNotifications.cancel({ notifications: [{ id: notifId }] }).catch(() => {});
+      NativeAlarm.cancelAlarm({ id: alarmId }).catch(() => {});
     }
   }
 
