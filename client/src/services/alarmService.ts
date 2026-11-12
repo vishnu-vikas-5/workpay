@@ -1,4 +1,6 @@
 // Web Audio API Synthesizer and Native Local Alarms for WorkPay
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 export type AlarmType = 'shift_end' | 'overtime';
 
@@ -26,6 +28,8 @@ export interface ShiftAlarmSettings {
 
 const ALARMS_STORAGE_KEY = 'workpay_active_alarms';
 const SHIFT_SETTINGS_KEY = 'workpay_shift_alarm_settings';
+const ALARM_CHANNEL_ID = 'workpay_alarm_channel';
+const SHIFT_END_NOTIF_ID = 9999;
 
 class AlarmService {
   private audioCtx: AudioContext | null = null;
@@ -35,10 +39,89 @@ class AlarmService {
   private backgroundTickerId: any = null;
   private onAlarmTriggerCallback: ((alarm: ActiveAlarm) => void) | null = null;
   private onAlarmsUpdateCallback: (() => void) | null = null;
+  private isNativeReady: boolean = false;
 
   constructor() {
     this.initAudioContext();
+    this.initNativeNotifications();
     this.startBackgroundTicker();
+  }
+
+  // Consistent positive 31-bit integer hash for notification IDs
+  private hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
+    }
+    return Math.abs(hash % 2000000000) || 1001;
+  }
+
+  // Initialize native alarm channel and notification listeners on Android / iOS
+  public async initNativeNotifications() {
+    if (typeof window === 'undefined') return;
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // High importance notification channel with alarm behavior for Android
+        await LocalNotifications.createChannel({
+          id: ALARM_CHANNEL_ID,
+          name: 'WorkPay Shift & Overtime Alarms',
+          description: 'Loud alarm alerts for shift completion and overtime tracking',
+          importance: 5, // IMPORTANCE_HIGH: Pops up as heads-up notification over any app
+          visibility: 1, // VISIBILITY_PUBLIC: Displays on lock screen
+          vibration: true,
+          lights: true,
+          lightColor: '#D97706',
+        }).catch((e) => console.warn('createChannel notice:', e));
+
+        // Request permission on Android 13+ / iOS
+        const perm = await LocalNotifications.checkPermissions();
+        if (perm.display !== 'granted') {
+          await LocalNotifications.requestPermissions();
+        }
+
+        // Handle user tapping the notification outside the app
+        LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+          const extra = action.notification.extra;
+          if (extra?.alarmId) {
+            const alarms = this.getActiveAlarms();
+            const matching = alarms.find((a) => a.id === extra.alarmId);
+            if (matching) {
+              matching.status = 'ringing';
+              this.startAlarmSound();
+              this.onAlarmTriggerCallback?.(matching);
+            }
+          } else if (extra?.type === 'shift_end') {
+            const shiftEndAlarm: ActiveAlarm = {
+              id: `shift-end-${Date.now()}`,
+              type: 'shift_end',
+              employeeName: 'All Workers',
+              durationMinutes: 480,
+              overtimeHours: 0,
+              scheduledTimeStr: '17:30',
+              startTime: Date.now(),
+              targetEndTime: Date.now(),
+              status: 'ringing',
+              note: 'Daily Shift End: Mark Attendance or Add Overtime',
+              createdAt: new Date().toISOString(),
+            };
+            this.startAlarmSound();
+            this.onAlarmTriggerCallback?.(shiftEndAlarm);
+          }
+        });
+
+        this.isNativeReady = true;
+
+        // Schedule or restore initial daily shift alarm on app launch
+        const shiftSettings = this.getShiftAlarmSettings();
+        if (shiftSettings.enabled) {
+          this.scheduleDailyShiftNativeAlarm(shiftSettings).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Native notification initialization notice:', e);
+    }
   }
 
   // Pre-initialize or unlock AudioContext on user gesture
@@ -151,7 +234,7 @@ class AlarmService {
     }
   }
 
-  // Test sound function (plays 2 pulses)
+  // Test sound function (plays 2 pulses + vibration)
   public testAlarmSound() {
     this.initAudioContext();
     this.playBeepPulse();
@@ -161,10 +244,22 @@ class AlarmService {
         navigator.vibrate([200, 100, 200]);
       } catch (e) {}
     }
+    this.showNotification(
+      '🔔 Alarm Sound & Speaker Test',
+      'WorkPay alarm sound and heads-up notifications are functioning properly.'
+    );
   }
 
   // Request browser/system notification permissions
   public async requestNotificationPermission(): Promise<boolean> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const res = await LocalNotifications.requestPermissions();
+        return res.display === 'granted';
+      } catch (e) {
+        return false;
+      }
+    }
     if (typeof window === 'undefined' || !('Notification' in window)) return false;
     if (Notification.permission === 'granted') return true;
     if (Notification.permission !== 'denied') {
@@ -174,8 +269,23 @@ class AlarmService {
     return false;
   }
 
-  // Show a local system notification
+  // Show a local system notification / heads-up banner
   public showNotification(title: string, body: string) {
+    if (Capacitor.isNativePlatform()) {
+      LocalNotifications.schedule({
+        notifications: [
+          {
+            id: Math.floor(Math.random() * 80000) + 10000,
+            title,
+            body,
+            schedule: { at: new Date(Date.now() + 100) },
+            channelId: ALARM_CHANNEL_ID,
+          },
+        ],
+      }).catch((e) => console.warn('Native notification schedule error:', e));
+      return;
+    }
+
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification(title, {
@@ -210,7 +320,50 @@ class AlarmService {
     try {
       localStorage.setItem(SHIFT_SETTINGS_KEY, JSON.stringify(settings));
       this.onAlarmsUpdateCallback?.();
+      this.scheduleDailyShiftNativeAlarm(settings).catch(() => {});
     } catch (e) {}
+  }
+
+  // Schedule daily repeating native alarm for shift end (fires outside app)
+  public async scheduleDailyShiftNativeAlarm(settings: ShiftAlarmSettings) {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      if (!settings.enabled || !settings.shiftEndTime) {
+        await LocalNotifications.cancel({ notifications: [{ id: SHIFT_END_NOTIF_ID }] }).catch(() => {});
+        return;
+      }
+
+      const [hStr, mStr] = settings.shiftEndTime.split(':');
+      const target = new Date();
+      target.setHours(parseInt(hStr, 10) || 17, parseInt(mStr, 10) || 30, 0, 0);
+
+      // If today's time has already passed, schedule for tomorrow
+      if (target.getTime() <= Date.now()) {
+        target.setDate(target.getDate() + 1);
+      }
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: SHIFT_END_NOTIF_ID,
+            title: `⏰ Daily Shift End Alarm (${settings.shiftEndTime})`,
+            body: "Work shift ended! Time to mark today's worker attendance or add overtime.",
+            schedule: {
+              at: target,
+              allowWhileIdle: true, // EXACT Android AlarmManager trigger even in Doze mode
+              repeats: true,
+              every: 'day', // Repeats automatically every day at specified time
+            },
+            channelId: ALARM_CHANNEL_ID,
+            extra: {
+              type: 'shift_end',
+            },
+          },
+        ],
+      });
+    } catch (e) {
+      console.warn('Error scheduling daily shift native alarm:', e);
+    }
   }
 
   // -------------------------------------------------------------
@@ -231,6 +384,44 @@ class AlarmService {
       localStorage.setItem(ALARMS_STORAGE_KEY, JSON.stringify(alarms));
       this.onAlarmsUpdateCallback?.();
     } catch (e) {}
+  }
+
+  // Schedule exact native notification for an overtime alarm
+  private async scheduleNativeAlarm(alarm: ActiveAlarm) {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      const notifId = this.hashString(alarm.id);
+      const isShiftEnd = alarm.type === 'shift_end';
+      const title = isShiftEnd
+        ? `⏰ Shift End Alarm (${alarm.scheduledTimeStr || '5:30 PM'})`
+        : `⏰ Overtime Finished: ${alarm.employeeName}`;
+      const body = isShiftEnd
+        ? "Work shift ended! Time to mark today's worker attendance or add overtime."
+        : `${alarm.employeeName} completed ${alarm.overtimeHours}h overtime! Tap to mark attendance & record OT.`;
+
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: notifId,
+            title,
+            body,
+            schedule: {
+              at: new Date(alarm.targetEndTime),
+              allowWhileIdle: true, // Exact AlarmManager trigger outside of app
+            },
+            channelId: ALARM_CHANNEL_ID,
+            extra: {
+              alarmId: alarm.id,
+              type: alarm.type,
+              employeeId: alarm.employeeId,
+              employeeName: alarm.employeeName,
+            },
+          },
+        ],
+      });
+    } catch (e) {
+      console.warn('Error scheduling native overtime alarm:', e);
+    }
   }
 
   /**
@@ -306,6 +497,10 @@ class AlarmService {
     );
     alarms.push(newAlarm);
     this.saveActiveAlarms(alarms);
+
+    // Schedule native Android alarm that fires even when app is closed / outside app
+    this.scheduleNativeAlarm(newAlarm);
+
     return newAlarm;
   }
 
@@ -314,6 +509,11 @@ class AlarmService {
     const alarms = this.getActiveAlarms().filter((a) => a.id !== alarmId);
     this.saveActiveAlarms(alarms);
     this.stopAlarmSound();
+
+    if (Capacitor.isNativePlatform()) {
+      const notifId = this.hashString(alarmId);
+      LocalNotifications.cancel({ notifications: [{ id: notifId }] }).catch(() => {});
+    }
   }
 
   // Mark an alarm completed/dismissed
@@ -323,14 +523,19 @@ class AlarmService {
       a.id === alarmId ? { ...a, status: 'completed' as const } : a
     );
     this.saveActiveAlarms(alarms);
+
+    if (Capacitor.isNativePlatform()) {
+      const notifId = this.hashString(alarmId);
+      LocalNotifications.cancel({ notifications: [{ id: notifId }] }).catch(() => {});
+    }
   }
 
   // Snooze an alarm by 10 minutes
   public snoozeAlarm(alarmId: string, snoozeMinutes: number = 10) {
     this.stopAlarmSound();
+    const newEndTime = Date.now() + snoozeMinutes * 60 * 1000;
     const alarms = this.getActiveAlarms().map((a) => {
       if (a.id === alarmId) {
-        const newEndTime = Date.now() + snoozeMinutes * 60 * 1000;
         return {
           ...a,
           status: 'running' as const,
@@ -340,6 +545,11 @@ class AlarmService {
       return a;
     });
     this.saveActiveAlarms(alarms);
+
+    const snoozedAlarm = alarms.find((a) => a.id === alarmId);
+    if (snoozedAlarm) {
+      this.scheduleNativeAlarm(snoozedAlarm);
+    }
   }
 
   // Listeners
@@ -351,7 +561,7 @@ class AlarmService {
     this.onAlarmsUpdateCallback = cb;
   }
 
-  // Periodic 1-second background ticker to check shift end and overtime alarms
+  // Periodic 1-second foreground ticker to check shift end and overtime alarms while app is open
   private startBackgroundTicker() {
     if (this.backgroundTickerId) clearInterval(this.backgroundTickerId);
 

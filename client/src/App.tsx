@@ -26,6 +26,7 @@ import { DownloadAppPage } from './pages/DownloadAppPage';
 import { Employee } from './types';
 import { useAppData } from './context/AppDataContext';
 import { useAuth } from './context/AuthContext';
+import { Capacitor } from '@capacitor/core';
 
 export const App: React.FC = () => {
   const { employees, refreshAll, syncWithCloud, isSyncing } = useAppData();
@@ -59,10 +60,22 @@ export const App: React.FC = () => {
     }
   };
 
+  // Check if running inside the installed native Android Capacitor APK
+  const isCapacitorNative = typeof window !== 'undefined' && (
+    Capacitor.isNativePlatform() ||
+    window.location.protocol === 'capacitor:' ||
+    window.location.hostname === 'localhost' ||
+    Boolean((window as any).Capacitor?.isNativePlatform?.())
+  );
+
   // Route routing:
-  // Root '/' and '/download' open the Download Page (as requested by user)
-  // '/app' and '/web' open the Main Application Console
+  // Inside the Android APK: ALWAYS launch directly to the main app console (never show download page!)
+  // On the Web: Root '/' and '/download' open the Download Page; '/app' and '/web' open the Main Application Console
   const [viewMode, setViewMode] = useState<'download' | 'app'>(() => {
+    if (isCapacitorNative) {
+      return 'app';
+    }
+
     const path = window.location.pathname.toLowerCase();
     const search = window.location.search.toLowerCase();
     const hash = window.location.hash.toLowerCase();
@@ -79,12 +92,13 @@ export const App: React.FC = () => {
       return 'app';
     }
 
-    // Default root '/' and all other paths open the Download Page
+    // Default root '/' and all other paths on the web open the Download Page
     return 'download';
   });
 
   // Keep viewMode synced if user clicks browser back/forward buttons
   useEffect(() => {
+    if (isCapacitorNative) return;
     const handlePopState = () => {
       const path = window.location.pathname.toLowerCase();
       const search = window.location.search.toLowerCase();
@@ -102,7 +116,7 @@ export const App: React.FC = () => {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isCapacitorNative]);
 
   const handleGoToWebApp = () => {
     try {
@@ -112,13 +126,14 @@ export const App: React.FC = () => {
   };
 
   const handleGoToDownload = () => {
+    if (isCapacitorNative) return;
     try {
       window.history.pushState({}, '', '/');
     } catch (e) {}
     setViewMode('download');
   };
 
-  if (viewMode === 'download') {
+  if (viewMode === 'download' && !isCapacitorNative) {
     return <DownloadAppPage onGoToWebApp={handleGoToWebApp} />;
   }
 
@@ -235,15 +250,17 @@ export const App: React.FC = () => {
 
           {/* Quick Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Get APK Button */}
-            <button
-              onClick={handleGoToDownload}
-              className="hidden lg:flex px-2.5 py-1.5 text-xs font-bold text-[#302C25] bg-[#EBE2CC] hover:bg-[#CFC6B1] rounded-xl border border-[#CFC6B1] transition-all items-center gap-1.5 shadow-2xs whitespace-nowrap"
-              title="Download Android APK"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-[#302C25]" />
-              <span>Get APK</span>
-            </button>
+            {/* Get APK Button - Only on Web */}
+            {!isCapacitorNative && (
+              <button
+                onClick={handleGoToDownload}
+                className="hidden lg:flex px-2.5 py-1.5 text-xs font-bold text-[#302C25] bg-[#EBE2CC] hover:bg-[#CFC6B1] rounded-xl border border-[#CFC6B1] transition-all items-center gap-1.5 shadow-2xs whitespace-nowrap"
+                title="Download Android APK"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-[#302C25]" />
+                <span>Get APK</span>
+              </button>
+            )}
 
             {/* Shift & OT Alarm Button (Hidden on Mobile, Available in Mobile Bottom Dock) */}
             <button
