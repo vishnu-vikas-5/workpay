@@ -196,7 +196,6 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     let isSubscribed = true;
 
     const performSync = async () => {
-      setIsSyncing(true);
       try {
         await storageService.syncWithFirestore();
         if (isSubscribed) {
@@ -204,24 +203,41 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       } catch (err) {
         console.warn('Reactive cloud sync notice:', err);
-      } finally {
-        if (isSubscribed) {
-          setIsSyncing(false);
-        }
       }
     };
 
+    // Immediate initial sync
     performSync();
 
+    // Live real-time Firestore listeners for instant updates across devices
     const unsubscribe = storageService.subscribeToCloudUpdates(() => {
       if (isSubscribed) {
         loadData();
       }
     });
 
+    // Auto-sync whenever device/tab regains focus or becomes visible
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible' && isSubscribed) {
+        performSync();
+      }
+    };
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    // Heartbeat sync every 15 seconds to ensure cross-device consistency
+    const syncInterval = setInterval(() => {
+      if (isSubscribed && document.visibilityState === 'visible') {
+        performSync();
+      }
+    }, 15000);
+
     return () => {
       isSubscribed = false;
       unsubscribe();
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      clearInterval(syncInterval);
     };
   }, [firebaseUser, loadData]);
 
@@ -268,6 +284,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       upiId: empData.upiId?.trim() || undefined,
       advanceBalance: typeof empData.advanceBalance === 'number' ? empData.advanceBalance : 0,
       status: empData.status || 'active',
+      userId: firebaseUser?.uid || user?.id || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -1214,6 +1231,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       grossPay,
       advanceDeducted,
       remainingAdvanceBalance,
+      userId: firebaseUser?.uid || user?.id || '',
       notes: advanceDeducted > 0
         ? `${data.shiftsCount} shift (${data.shiftRate}) + ${data.overtimeHours}h OT — Less: ₹${advanceDeducted} Advance (Bal: ₹${remainingAdvanceBalance})`
         : `${data.shiftsCount} shift${data.shiftsCount > 1 ? 's' : ''} (₹${data.shiftRate}) + ${data.overtimeHours}h OT (₹${data.overtimeRate}/hr)`,
@@ -1267,6 +1285,9 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         utr,
       }
     );
+
+    // Trigger background sync to ensure immediate cloud propagation
+    storageService.syncWithFirestoreInBackground().catch(() => {});
 
     return transaction;
   };

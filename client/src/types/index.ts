@@ -38,6 +38,7 @@ export interface Employee {
   status: 'active' | 'inactive';
   avatar?: string;
   notes?: string;
+  userId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -209,6 +210,7 @@ export interface PaymentTransaction {
   advanceDeducted?: number; // Advance / loan amount deducted from this wage payment
   remainingAdvanceBalance?: number; // Remaining advance balance after this deduction
   employeePhone?: string;
+  userId?: string;
 }
 
 export interface AdvanceRecord {
@@ -222,6 +224,7 @@ export interface AdvanceRecord {
   paymentMethod?: 'cash' | 'upi';
   referenceId?: string; // payment transaction ID if deducted
   createdAt: string;
+  userId?: string;
 }
 
 export interface NotificationItem {

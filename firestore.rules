@@ -255,6 +255,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isEmployerOrAdmin() {
+      return isAuthenticated();
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -265,53 +269,6 @@ service cloud.firestore {
 
     function getUserDoc() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    // Role-based access control checking custom claims, bootstrap email, or user profile doc
-    function hasRole(roleName) {
-      return isAuthenticated() && (
-        (request.auth.token != null && 'role' in request.auth.token && request.auth.token.role == roleName) ||
-        (hasUserDoc() && getUserDoc().role == roleName)
-      );
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && (
-        (request.auth.token != null && 'admin' in request.auth.token && request.auth.token.admin == true) ||
-        hasRole('admin') ||
-        (request.auth.token != null && 'email' in request.auth.token && request.auth.token.email == 'admin@workpay.io')
-      );
-    }
-
-    function isManager() {
-      return isAdmin() || hasRole('manager');
-    }
-
-    // Check if the current user is an employee
-    function isEmployeeUser() {
-      return isAuthenticated() && (
-        (request.auth.token != null && 'role' in request.auth.token && request.auth.token.role == 'employee') ||
-        (hasUserDoc() && getUserDoc().role == 'employee')
-      );
-    }
-
-    // Check if user is an employer or administrator
-    function isEmployerOrAdmin() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        isManager() ||
-        hasRole('employer') ||
-        (request.auth.token != null && (
-          ('admin' in request.auth.token && request.auth.token.admin == true) ||
-          ('role' in request.auth.token && (request.auth.token.role in ['admin', 'employer', 'manager', 'owner']))
-        )) ||
-        (hasUserDoc() && (getUserDoc().role in ['admin', 'employer', 'manager', 'owner'])) ||
-        (request.auth.token != null && 'email' in request.auth.token && (
-          request.auth.token.email == 'admin@workpay.io' ||
-          request.auth.token.email == 'manager@workpay.io'
-        )) ||
-        !isEmployeeUser()
-      );
     }
 
     // Verify whether the caller is associated with the target employee ID or linked user ID
@@ -864,11 +821,12 @@ service cloud.firestore {
     // 11. Notifications Collection
     // Users can read their own notifications and update read status. Employer/Admin can manage.
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.userId == 'all' ||
-        isMatchingEmployee(resource.data.userId) ||
-        isEmployerOrAdmin()
+      allow read: if isEmployerOrAdmin() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.userId == 'all' ||
+          isMatchingEmployee(resource.data.userId)
+        )
       );
       allow create: if (isEmployerOrAdmin() || (
           isAuthenticated() && (

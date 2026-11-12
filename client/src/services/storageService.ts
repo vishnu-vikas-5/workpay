@@ -225,7 +225,9 @@ export function deduplicateTransactions(txs: PaymentTransaction[]): PaymentTrans
       map.set(t.id, t);
     }
   }
-  return Array.from(map.values());
+  const result = Array.from(map.values());
+  result.sort((a, b) => new Date(b.initiatedAt || 0).getTime() - new Date(a.initiatedAt || 0).getTime());
+  return result;
 }
 
 /**
@@ -328,8 +330,12 @@ export const storageService = {
 
     // Reliable Firestore write with cloud unmark
     if (isFirebaseConfigured) {
+      const cleanEmp: Employee = {
+        ...employee,
+        userId: employee.userId || auth.currentUser?.uid || '',
+      };
       try {
-        await setDoc(doc(db, 'employees', employee.id), sanitizeForFirestore(employee));
+        await setDoc(doc(db, 'employees', cleanEmp.id), sanitizeForFirestore(cleanEmp));
       } catch (e) {
         console.warn('Firestore saveEmployee error:', e);
       }
@@ -564,9 +570,15 @@ export const storageService = {
     setLocal(KEYS.TRANSACTIONS, clean);
 
     if (isFirebaseConfigured) {
-      setDoc(doc(db, 'payments', tx.id), sanitizeForFirestore(tx)).catch((e) => {
-        console.warn('Firestore background saveTransaction error:', e);
-      });
+      const cleanTx: PaymentTransaction = {
+        ...tx,
+        userId: tx.userId || auth.currentUser?.uid || '',
+      };
+      try {
+        await setDoc(doc(db, 'payments', cleanTx.id), sanitizeForFirestore(cleanTx));
+      } catch (e) {
+        console.warn('Firestore saveTransaction error:', e);
+      }
     }
   },
 
@@ -844,7 +856,11 @@ export const storageService = {
 
       for (const tx of txsToPush) {
         try {
-          await setDoc(doc(db, 'payments', tx.id), sanitizeForFirestore(tx));
+          const cleanTx: PaymentTransaction = {
+            ...tx,
+            userId: tx.userId || auth.currentUser?.uid || '',
+          };
+          await setDoc(doc(db, 'payments', cleanTx.id), sanitizeForFirestore(cleanTx));
           pushedCount++;
         } catch (err) {
           console.warn('Sync push payment err:', err);
@@ -1020,10 +1036,29 @@ export const storageService = {
       // 3. Payments live listener
       const unsubPay = onSnapshot(collection(db, 'payments'), (snap) => {
         const deletedIds = getDeletedIds();
+        const localTxs = getLocal<PaymentTransaction[]>(KEYS.TRANSACTIONS, []);
         const remoteTxs = snap.docs
           .map((d) => d.data() as PaymentTransaction)
           .filter((t) => !deletedIds.has(t.id));
-        const cleanTxs = deduplicateTransactions(remoteTxs);
+
+        const map = new Map<string, PaymentTransaction>();
+        remoteTxs.forEach((rem) => {
+          if (rem && rem.id && !deletedIds.has(rem.id)) {
+            map.set(rem.id, rem);
+          }
+        });
+
+        const now = Date.now();
+        localTxs.forEach((loc) => {
+          if (loc && loc.id && !deletedIds.has(loc.id) && !map.has(loc.id)) {
+            const ageMs = now - new Date(loc.initiatedAt || 0).getTime();
+            if (ageMs < 30000) {
+              map.set(loc.id, loc);
+            }
+          }
+        });
+
+        const cleanTxs = deduplicateTransactions(Array.from(map.values()));
         setLocal(KEYS.TRANSACTIONS, cleanTxs);
         onDataUpdated();
       }, (err) => console.warn('Payments onSnapshot error:', err));
