@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd client && npm run build",
-  "outputDirectory": "client/dist",
+  "buildCommand": "sh -c \"if [ -d 'client' ]; then (cd client && npm run build) && mkdir -p dist && cp -r client/dist/* dist/ 2>/dev/null || true; else npm run build && mkdir -p client/dist && cp -r dist/* client/dist/ 2>/dev/null || true; fi\"",
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/assets/(.*)",

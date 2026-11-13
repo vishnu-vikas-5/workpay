@@ -1,9 +1,29 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "sh -c \"if [ -d 'client' ]; then (cd client && npm run build) && mkdir -p dist && cp -r client/dist/* dist/ 2>/dev/null || true; else npm run build && mkdir -p client/dist && cp -r dist/* client/dist/ 2>/dev/null || true; fi\"",
   "outputDirectory": "dist",
-  "rewrites": [
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
